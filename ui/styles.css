@@ -1,0 +1,23 @@
+@import "../koala/app/globals.css";
+
+@source "../koala/components/ui/tooltip";
+@source "../koala/components/ui/kbd";
+@source "../koala/components/ui/dropdown-menu";
+@source "../koala/components/ui/switch";
+@source "../koala/components/ui/toast";
+@source "../koala/components/ui/animated-label";
+@source "../koala/components/ui/button";
+@source "../koala/components/ui/spinner";
+@source "../koala/components/ui/popover";
+@source "../koala/components/ui/textarea";
+@source "../koala/components/ui/label";
+@source "../koala/components/ui/toggle-group";
+@source "../koala/components/ui/toggle";
+@source "../src";
+@source "./";
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "DM Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}

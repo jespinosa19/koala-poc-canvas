@@ -1,0 +1,562 @@
+/*
+ * ─── Concepts: Koala's fifth axis ────────────────────────────────────────────
+ *
+ * Theme, accent, radius and density are TUNING: they move colour, rounding and air inside one
+ * personality. A concept is the personality itself - a named preset that re-reads the whole system
+ * in another voice, with no edit to a single component.
+ *
+ * A concept is DESIGNED, not configured. It ships one reading of the system and offers no knobs of
+ * its own: `terminal` is mono, it is sharp, it has no containers, and none of those are switches.
+ * The four tuning axes stay available underneath (a concept still works in all four themes, with
+ * any accent), but what makes the concept the concept is not up for negotiation.
+ *
+ * Transport: `data-concept="<name>"`, written on <html> by ConceptProvider (the axis table lives in
+ * components/system-provider.tsx). Put on <html> it also reaches every portal (Dialog, Select,
+ * Popover, Toast), which is the only way an overlay can carry the concept; put on any wrapper it
+ * scopes to that subtree, which is what the lab's split view uses. The default concept writes no
+ * attribute at all, so none of this costs anything until someone opts in.
+ *
+ * Every concept is written in two parts:
+ *
+ *   A. TOKENS. Because globals.css declares its scale in an `inline` @theme, every colour, radius
+ *      and shadow utility resolves a raw variable at use time - so overriding the raw variable on
+ *      this scope re-derives the entire library. This part is cheap and total.
+ *
+ *   B. PERSONALITY. What no variable can express: casing, tracking, per-slot weight, which slot
+ *      carries a divider. It hooks the `data-slot` attribute every recipe already writes.
+ *
+ * Part B is deliberately UNLAYERED. Tailwind v4 emits its utilities inside `@layer utilities`, and
+ * unlayered CSS beats every layer regardless of specificity - which is the only way a concept can
+ * win against a `font-semibold` written inside a recipe. (The nine restyles in app/demo/*.css use
+ * `@layer components` for the exact opposite reason: there the utilities must win. Don't "fix" the
+ * layering here to match them.) The cost is that these rules also beat a call site's own className,
+ * so the list stays short, closed, and each rule says which utility it is overruling.
+ *
+ * The token blocks are written `:root[data-concept="x"], [data-concept="x"]` on purpose: on <html>
+ * the concept shares an element with the theme class, and a bare attribute selector (0,1,0) would
+ * tie with `.dark` (0,1,0) and lose on source order. `:root[…]` is (0,2,0) and wins; the bare
+ * selector is there for scoped use, where the concept's own declaration beats inheritance anyway.
+ */
+
+/* ─── Terminal ────────────────────────────────────────────────────────────────
+ * Bold, minimal, sharp, and with no containers at all. Nothing is a box: a panel is a label, a rule
+ * and its contents, so the page reads as one continuous grid of records instead of a tray of cards.
+ * Everything is set in mono, every corner is square, every figure sits on a tabular grid, and the
+ * type carries the hierarchy that the vanished boxes used to carry.
+ *
+ * It starts in dark (ConceptProvider applies that once) but is written against the roles, not
+ * against one palette, so it holds up in all four themes.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+:root[data-concept="terminal"],
+[data-concept="terminal"] {
+  /* Sharp. Not "small radius": zero. Every rung of the scale is a multiple of this. */
+  --radius: 0rem;
+  /* And the pills unpill. `--radius: 0` already flattens them (0 x 1000), but the factor says it
+     outright, so the concept survives anyone ever giving it a non-zero radius. */
+  --radius-pill-factor: 1;
+
+  /* Mono, by decision. `--font-sans` and `--font-heading` are next/font aliases, so re-pointing
+     them here re-sets the entire system; `--font-mono-face` is the seam globals.css leaves for the
+     one family token an `inline` @theme would otherwise bake in, so the deliberate `font-mono` call
+     sites (CodeSnippet, Kbd, inline code) take the concept's face too instead of the platform's.
+     The fallback keeps the concept honest if the webfont is ever dropped from app/layout. */
+  --font-terminal-face: var(
+    --font-terminal,
+    ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    "Liberation Mono",
+    monospace
+  );
+  --font-sans: var(--font-terminal-face);
+  --font-heading: var(--font-terminal-face);
+  --font-mono-face: var(--font-terminal-face);
+
+  /* No containers. `--edge` is the one token 27 components read for "the contour an in-flow
+     container draws" (FOUNDATIONS.md, "Shadows over borders"), so making it transparent dissolves
+     every card, tile and panel in the library at once - the single cheapest line in this file, and
+     the whole reason the role exists. What keeps its line is what floats or encloses input: a
+     Dialog (--border-soft), a field (--input), an `outline` card that asked for a contour.
+     No elevation either: with nothing to lift, a shadow would only smudge the grid. */
+  --edge: transparent;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  --shadow-2xl: none;
+
+  /* The rules that survive have to do the whole job of structure, so the stroke steps up. Derived
+     from --foreground rather than written per theme, so one line works on all four grounds.
+     --border-soft is declared per theme against THAT theme's --border, and a custom property
+     resolves where it is declared, so it has to be restated here to track ours. */
+  --border: color-mix(in oklch, var(--foreground) 20%, transparent);
+  --border-soft: color-mix(in oklch, var(--foreground) 12%, transparent);
+  --input: color-mix(in oklch, var(--foreground) 26%, transparent);
+
+  /* Motion reports, it doesn't perform. Same curves, shorter dwell. */
+  --duration-fast: 90ms;
+  --duration-base: 140ms;
+  --duration-slow: 200ms;
+
+  /* Figures sit on a grid everywhere, not only where a number animates. In the house style tabular
+     figures mark "this value updates"; in this concept the whole surface is a readout. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Terminal · personality (unlayered, see the header) ─────────────────────── */
+
+/*
+ * The micro label. Every slot whose job is to NAME something - a panel, a column, a field, a group
+ * of menu items - drops to a tracked uppercase caption in the meta ink. This is the trait that
+ * cannot be tokenised at all: no CSS variable produces `text-transform`, and the eight `uppercase`
+ * call sites in the library are proof the system never needed one until now.
+ * Overrules: `text-base`/`text-lg` (Card density), `font-semibold`, `text-sm font-medium`.
+ */
+[data-concept="terminal"] [data-slot="card-title"],
+[data-concept="terminal"] [data-slot="table-head"],
+[data-concept="terminal"] [data-slot="label"],
+[data-concept="terminal"] [data-slot="stat-label"],
+[data-concept="terminal"] [data-slot="progress-label"],
+[data-concept="terminal"] [data-slot="ranking-title"],
+[data-concept="terminal"] [data-slot="form-section-title"],
+[data-concept="terminal"] [data-slot="field-group-label"],
+[data-concept="terminal"] [data-slot="sidebar-group-label"],
+[data-concept="terminal"] [data-slot="select-label"],
+[data-concept="terminal"] [data-slot="multi-select-label"],
+[data-concept="terminal"] [data-slot="dropdown-menu-label"],
+[data-concept="terminal"] [data-slot="context-menu-label"] {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.06em; /* mono is already wide; the house 0.09em would break the word up */
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/*
+ * The panel, dissolved. With `--edge` transparent a Card has no contour left, so its padding is
+ * just an indent with nothing to be indented from: it goes, and the content lands on the page grid.
+ * What replaces the box is a rule under the label. The card keeps its role - a named block of
+ * related records - and loses its tray.
+ * Overrules: `gap-4 py-4` / `gap-6 py-6` and the `px-*` on every part.
+ */
+[data-concept="terminal"] [data-slot="card"] {
+  gap: 0;
+  padding: 0;
+}
+[data-concept="terminal"] [data-slot="card-header"],
+[data-concept="terminal"] [data-slot="card-content"],
+[data-concept="terminal"] [data-slot="card-footer"] {
+  padding-inline: 0;
+}
+[data-concept="terminal"] [data-slot="card-header"] {
+  padding-block: 0 0.5rem;
+  border-block-end: 1px solid var(--border);
+}
+[data-concept="terminal"] [data-slot="card-content"] {
+  padding-block: 0.875rem;
+}
+[data-concept="terminal"] [data-slot="card-footer"] {
+  padding-block: 0.75rem;
+  border-block-start: 1px solid var(--border);
+}
+/* Card media cancels the card's vertical padding with a negative margin so its inset lands at 8px.
+   There is no padding left to cancel, and no card edge to be inset from, so the picture goes flush. */
+[data-concept="terminal"] [data-slot="card-media"] {
+  margin: 0;
+}
+
+/*
+ * Bold. With the boxes gone, weight and size carry the hierarchy on their own: headings and figures
+ * go heavy and tighten, which is also what a mono face needs to stop reading as a code listing.
+ * Overrules: `font-semibold` on headings and on `stat-value`.
+ */
+[data-concept="terminal"] :is(h1, h2, h3, h4),
+[data-concept="terminal"] [data-slot="stat-value"] {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * Rows close up. Table height is a density class string (`h-9`/`h-12`), not a variable - and the
+ * global `--spacing` knob that WOULD reach it is off limits: it shrinks icon boxes with the rows and
+ * breaks the 32/36/40 control contract the tests pin to the literals `h-8`/`h-9`/`h-10`.
+ * Overrules: `h-9 px-3 py-1.5` / `h-12 px-4 py-3`.
+ */
+[data-concept="terminal"] [data-slot="table-head"],
+[data-concept="terminal"] [data-slot="table-cell"] {
+  height: 1.75rem; /* 28px */
+  padding-block: 0;
+}
+
+/*
+ * Shape affordances that opted out of the radius knob. `rounded-full` is a literal, so the knob
+ * never reaches it; on a Badge or a chip that is a shape decision, not a circle, and in this concept
+ * it squares with everything else. Avatars, dots and spinners keep their `rounded-full` and stay
+ * round, which is correct.
+ * Overrules: `rounded-full` (Badge `pill`), `rounded-md` (Badge default).
+ */
+[data-concept="terminal"] [data-slot="badge"],
+[data-concept="terminal"] [data-slot="kbd"],
+[data-concept="terminal"] [data-slot="toggle-group-indicator"],
+[data-concept="terminal"] [data-slot="tabs-indicator"],
+[data-concept="terminal"] :is([data-slot="ranking-bar"], [data-slot="ranking-bar"] > *) {
+  border-radius: 0;
+}
+
+/*
+ * Readouts go monochrome plus accent. A Ranking bar ships in the data-viz blue it deliberately
+ * shares with Chart, which is right in the house voice - but in a concept where colour appears
+ * nowhere except status, one blue rail reads as a bug. Here a bar is simply the accent.
+ * Overrules: `bg-blue-500` (ranking barFill).
+ */
+[data-concept="terminal"] [data-slot="ranking-bar"] > * {
+  background-color: var(--brand);
+}
+
+/*
+ * No press scale. `active:scale-[0.96]` is a literal transform at 53 call sites and no variable
+ * neutralises it; an instrument acknowledges a press by changing state, not by shrinking.
+ * Overrules: `active:scale-[0.96]`.
+ */
+[data-concept="terminal"] [data-slot="button"]:active,
+[data-concept="terminal"] [data-slot="toggle-group-item"]:active,
+[data-concept="terminal"] [data-slot="button-group-item"]:active {
+  transform: none;
+}
+
+/* ─── Tactile ─────────────────────────────────────────────────────────────────
+ * Controls you could pick up. Every field, key and thumb is an object with two things: a soft
+ * stroke (a hairline of ink, never a dark rule) and a soft shadow under it. Nothing else - no
+ * gradients, no lit bevels, no engraved wells. Corners are rounded but not pills, so a field reads
+ * as a key cap rather than a capsule, and in the dark themes a field fills one shade lighter than
+ * what it sits on, so it rises instead of being punched in.
+ *
+ * The stroke is drawn by whatever the control already has: its border where it has one (fields,
+ * Select, outline Button, Checkbox), a 1px ring where it has none (filled Buttons, thumbs, the
+ * active tab). That is why there are two tokens, `--tactile-object` (ring + lift) and
+ * `--tactile-lift` (lift alone, for bordered controls): a ring on a bordered control draws 2px.
+ *
+ * Designed in dark (ConceptProvider applies that once); the lift is restated for the dark themes.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+:root[data-concept="tactile"],
+[data-concept="tactile"] {
+  /* Machined, not soft: 8px on a 40px field and on the menu that drops from it, 6px on the rows
+     inside, the corner of a precision instrument rather than a hardware settings panel. The pills
+     unpill for the same reason. */
+  --radius: 0.5rem;
+  --radius-pill-factor: 1;
+
+  /* The stroke: a hairline of ink, one notch quieter than the house `--input`, because the shadow
+     shares the job of drawing the edge. Borders read it through `--input`, rings through the token. */
+  --tactile-stroke: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --input: var(--tactile-stroke);
+
+  /* How far a field's fill moves toward the ink to rise off its ground: a faint 3% on light
+     grounds, now that no shadow lifts the field. */
+  --tactile-fill: 3%;
+  /* How far a bordered dialog footer moves toward the ink: the tray the actions rest on. */
+  --tactile-footer-fill: 0%;
+
+  /* The shadow: a 1px contact and a short, soft fall. */
+  --tactile-drop: oklch(0 0 0 / 0.08);
+  --tactile-lift: 0 1px 2px 0 var(--tactile-drop), 0 2px 6px -2px var(--tactile-drop);
+  --tactile-object: 0 0 0 1px var(--tactile-stroke), var(--tactile-lift);
+  /* A track, a tray or a pressed control: the stroke stays, the lift goes. */
+  --tactile-flat: inset 0 0 0 1px var(--tactile-stroke);
+  /* Fields and keys carry no shadow: the stroke and the fill do the rising. */
+  --tactile-field-lift: none;
+
+  /* Every `shadow-xs` control in the library (Select trigger, Checkbox, filled and outline Buttons)
+     drops its shadow here. The larger steps keep the theme's own values, so a popover or dialog
+     stays a floating sheet rather than a slab. */
+  --shadow-xs: 0 0 #0000;
+}
+
+:root[data-concept="tactile"]:is(.dark, .moonlight),
+[data-concept="tactile"]:is(.dark, .moonlight),
+[data-concept="tactile"] :is(.dark, .moonlight) {
+  --tactile-stroke: color-mix(in oklab, var(--foreground) 9%, transparent);
+  --tactile-fill: 6%;
+  --tactile-footer-fill: 4%;
+  --tactile-drop: oklch(0 0 0 / 0.35);
+}
+
+/* A light or cream scope inside a dark page (a preview, a pinned band) takes the light values back,
+   or it inherits the dark fill and stroke from the root. */
+[data-concept="tactile"] :is(.dark, .moonlight) :is(.light, .cream),
+:root[data-concept="tactile"]:is(.dark, .moonlight) :is(.light, .cream) {
+  --tactile-stroke: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --tactile-fill: 3%;
+  --tactile-footer-fill: 0%;
+  --tactile-drop: oklch(0 0 0 / 0.08);
+}
+
+/* Theme scopes declare their own `--shadow-xs` and focus ring; inside tactile the shadow stays off
+   and the ring stays ink at every depth. */
+:root[data-concept="tactile"],
+[data-concept="tactile"],
+[data-concept="tactile"] :is(.light, .dark, .cream, .moonlight),
+:root[data-concept="tactile"]:is(.light, .dark, .cream, .moonlight) {
+  --shadow-xs: 0 0 #0000;
+  --ring-brand: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --tactile-focus: color-mix(in oklab, var(--foreground) 35%, transparent);
+}
+
+/*
+ * Focus is ink, not accent: the field's border and every focus-visible ring turn grey.
+ * Overrules: `focus-within:border-brand` on fields and `focus-visible:ring-brand` on controls.
+ */
+[data-concept="tactile"] :is([data-slot="input-root"], [data-slot="textarea-root"]):focus-within:not([aria-invalid="true"]),
+[data-concept="tactile"] :is([data-slot="select-trigger"], [data-slot="native-select-field"]):focus-visible:not([aria-invalid="true"]) {
+  border-color: var(--tactile-focus);
+}
+/* Surfaces Radix focuses on open (menu, popover, dialog, listbox) wear their ring as the resting
+   hairline, not a focus ring: recolouring it lit the menu edge to 35% until an item took focus. */
+[data-concept="tactile"] :focus-visible:not([aria-invalid="true"], [role="menu"], [role="dialog"], [role="alertdialog"], [role="listbox"]),
+/* Agent Tree focuses the row (`li`) and rings the card inside it, so the card sets its own colour. */
+[data-concept="tactile"] li:focus-visible > [data-slot="agent-tree-node-card"] {
+  --tw-ring-color: var(--tactile-focus);
+}
+
+/* ─── Tactile · personality (unlayered, see the header) ──────────────────────── */
+
+/*
+ * Fields rise: they fill `--tactile-fill` toward the ink from whatever ground they sit on (so it
+ * holds inside a card, a muted band or a popover) and take the lift. The shadow steps aside while a
+ * field is focused so the brand ring owns the box-shadow (one box-shadow per state).
+ * Overrules: `bg-[var(--surface,var(--background))]`, and adds a shadow where the recipe has none.
+ */
+[data-concept="tactile"] :is([data-slot="input-root"], [data-slot="textarea-root"], [data-slot="select-trigger"], [data-slot="native-select-field"]) {
+  background-color: color-mix(in oklab, var(--surface, var(--background)), var(--foreground) var(--tactile-fill));
+}
+[data-concept="tactile"] :is([data-slot="input-root"], [data-slot="textarea-root"]):not(:focus-within, [data-disabled]) {
+  box-shadow: var(--tactile-field-lift);
+}
+[data-concept="tactile"] [data-slot="native-select-field"]:not(:focus, :disabled),
+[data-concept="tactile"] [data-slot="select-trigger"]:not(:focus-visible, :disabled, [aria-disabled="true"], [aria-invalid="true"], [data-state="open"], :active),
+[data-concept="tactile"] [data-slot="otp-input-cell"] > input:not(:focus, :disabled, [aria-invalid="true"]) {
+  box-shadow: var(--tactile-field-lift);
+}
+/* A borderless `inline` field is text until it is touched; it keeps no fill and no lift at rest. */
+[data-concept="tactile"] :is([data-slot="input-root"], [data-slot="textarea-root"]).border-transparent:not(:focus-within) {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/*
+ * The meta label above a field reads as the caption on a panel: regular weight, meta ink, so the
+ * value inside the raised field is the brightest thing in the pair.
+ * Overrules: `text-sm font-medium` (Label).
+ */
+[data-concept="tactile"] [data-slot="label"] {
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+/*
+ * Keys. Every filled Button variant carries `shadow-xs` (ghost, subtle, destructiveGhost and link
+ * don't, and stay flat). No key casts a shadow; what a borderless key is missing is its stroke, so
+ * it takes a 1px ring. Bordered keys (outline, overlay) keep their border as the stroke.
+ * Overrules: `shadow-xs` on borderless filled Buttons.
+ * Coupling: reads Tailwind classes of components/ui/button/button-variants.ts (no data-variant on
+ * the DOM); renaming `shadow-xs` or `border` there silently drops the stroke.
+ */
+[data-concept="tactile"] [data-slot="button"][class~="shadow-xs"]:not([class~="border"], :focus-visible, :disabled, [aria-disabled="true"]) {
+  box-shadow: 0 0 0 1px var(--tactile-stroke);
+}
+/* On a dark ground `bg-background` is darker than the groove the handle rides in, so it read as a
+ * hole; it fills one step toward the ink instead, the way a field rises.
+ * Overrules: `bg-background` on Slider.Thumb. */
+:root[data-concept="tactile"]:is(.dark, .moonlight) [data-slot="slider-thumb"],
+[data-concept="tactile"] :is(.dark, .moonlight) [data-slot="slider-thumb"] {
+  background-color: color-mix(in oklab, var(--background), var(--foreground) 14%);
+}
+
+/*
+ * An outline key is a key, so it gets a body: transparent, it read as a drawn border. It takes the
+ * field fill (the ground, moved `--tactile-fill` toward the ink) and hands the colour back to the
+ * recipe on hover and press.
+ * Overrules: `bg-transparent` on the outline variant, at rest.
+ */
+[data-concept="tactile"] [data-slot="button"][class~="shadow-xs"][class~="bg-transparent"]:not(:hover, :active, [data-state="open"], :disabled, [aria-disabled="true"]) {
+  background-color: color-mix(in oklab, var(--surface, var(--background)), var(--foreground) var(--tactile-fill));
+}
+
+/*
+ * Pressed: a key under the finger, or a trigger whose menu is open, loses its lift and keeps its
+ * stroke, so it reads as set down rather than moved (no scale, no translate).
+ * Overrules: the lift above and the recipe's `shadow-xs` while active.
+ */
+[data-concept="tactile"] [data-slot="button"][class~="shadow-xs"]:is(:active, [data-state="open"]):not([class~="border"], :focus-visible, :disabled, [aria-disabled="true"]) {
+  box-shadow: var(--tactile-flat);
+}
+[data-concept="tactile"] :is([data-slot="button"][class~="shadow-xs"][class~="border"], [data-slot="select-trigger"]):is(:active, [data-state="open"]):not(:focus-visible, :disabled, [aria-disabled="true"], [aria-invalid="true"]) {
+  box-shadow: none;
+}
+
+/*
+ * Tracks and trays are flat: a stroke, no lift, so what rides in them is the only thing that rises.
+ * The accent fill still carries on/off (a checked switch keeps `bg-primary`).
+ * Overrules: the flat `bg-input` switch track and `bg-muted` tab list (no stroke), and the shadow the
+ * segmented ToggleGroup draws on its tray. A `bg-transparent` or vertical tab list is no tray, so it keeps no stroke.
+ */
+[data-concept="tactile"] [data-slot="switch"]:not(:focus-visible),
+[data-concept="tactile"] [data-slot="slider-track"],
+[data-concept="tactile"] [data-slot="tabs-list"]:not(.bg-transparent, [data-orientation="vertical"]):has(> [data-slot="tabs-indicator"].bg-background),
+[data-concept="tactile"] [data-slot="toggle-group"][data-thumb] {
+  box-shadow: var(--tactile-flat);
+}
+
+/*
+ * Thumbs: the switch knob, the slider handle, the active tab and segment, the active TabStrip tab.
+ * Each is the object of its control, so each gets the stroke and the lift.
+ * Overrules: `shadow-sm` (and `ring-1 ring-border`, also a box-shadow) on each of them.
+ * Coupling: `.bg-background` is the tabs recipe's pill/segmented indicator (line, folder and chip
+ * keep theirs flat, and the vertical pill's is `bg-muted`); the variant is not on the DOM.
+ */
+[data-concept="tactile"] [data-slot="switch-thumb"],
+[data-concept="tactile"] [data-slot="switch-indicator"] > span,
+[data-concept="tactile"] [data-slot="slider-thumb"]:not(:focus-visible),
+[data-concept="tactile"] [data-slot="tabs-list"]:not([data-orientation="vertical"]) > [data-slot="tabs-indicator"].bg-background,
+[data-concept="tactile"] [data-slot="toggle-group-indicator"] > span,
+[data-concept="tactile"] [data-slot="toggle-group"][data-thumb="off"] [data-slot="toggle-group-item"][data-state="on"]:not(:focus-visible),
+[data-concept="tactile"] [data-slot="tab-strip-item"][data-active="true"]:not([data-dragging], :focus-visible) {
+  box-shadow: var(--tactile-object);
+}
+/* On a dark ground `bg-background` is darker than the groove the handle rides in, so it read as a
+ * hole; it fills one step toward the ink instead, the way a field rises.
+ * Overrules: `bg-background` on Slider.Thumb. */
+:root[data-concept="tactile"]:is(.dark, .moonlight) [data-slot="slider-thumb"],
+[data-concept="tactile"] :is(.dark, .moonlight) [data-slot="slider-thumb"] {
+  background-color: color-mix(in oklab, var(--background), var(--foreground) 14%);
+}
+/*
+ * A pressed Toggle, and the on items of a plain ToggleGroup, are set down: the stroke on top of
+ * their on-colour, no lift.
+ * Overrules: the flat `data-[state=on]` fill, and the plain group's `ring-2` on the on item.
+ */
+[data-concept="tactile"] [data-slot="toggle"][data-state="on"]:not(:focus-visible),
+[data-concept="tactile"] [data-slot="toggle-group"]:not([data-thumb]) [data-slot="toggle-group-item"][data-state="on"]:not(:focus-visible) {
+  box-shadow: var(--tactile-flat);
+}
+
+/* Disabled controls lose their lift: a dead control must not look pressable. */
+[data-concept="tactile"] :is([data-slot="button"], [data-slot="select-trigger"], [data-slot="native-select-field"], [data-slot="checkbox"]):is(:disabled, [aria-disabled="true"]),
+[data-concept="tactile"] :is([data-slot="input-root"], [data-slot="textarea-root"])[data-disabled],
+[data-concept="tactile"] :is([data-slot="switch"], [data-slot="slider"])[data-disabled] :is([data-slot="switch-thumb"], [data-slot="slider-thumb"]) {
+  box-shadow: none;
+}
+
+/* Only the properties that move are transitioned. Overrules: `transition` (all) in the Button base. */
+[data-concept="tactile"] :is([data-slot="button"], [data-slot="select-trigger"], [data-slot="native-select-field"], [data-slot="input-root"], [data-slot="textarea-root"]) {
+  transition-property: box-shadow, background-color, color, border-color;
+}
+
+/*
+ * The sheet is machined too: one step tighter than the house dialog at each density (16px
+ * comfortable, 12px compact), a 12px rhythm between its parts, and the close key tucked into the
+ * corner on the title's centre line. Everything that bleeds to the edge reads `--dialog-inset`.
+ * Overrules: `p-5 gap-4` / `p-4 gap-3` on DialogContent, the `-mx-* px-*` bleed of DialogBody and
+ * DialogStepper, and the `top-* right-*` of the close key.
+ * Coupling: reads the `[--dialog-inset:*]` class of the density in components/ui/dialog/dialog.tsx
+ * (inline demos paint the slots without data-slot); `size="media"` is `p-0` and keeps its frame.
+ */
+[data-concept="tactile"] [class~="[--dialog-inset:--spacing(5)]"] {
+  --dialog-inset: calc(var(--spacing) * 4);
+  row-gap: calc(var(--spacing) * 3);
+}
+[data-concept="tactile"] [class~="[--dialog-inset:--spacing(4)]"] {
+  --dialog-inset: calc(var(--spacing) * 3);
+  row-gap: calc(var(--spacing) * 2);
+}
+[data-concept="tactile"] :is([class~="[--dialog-inset:--spacing(5)]"], [class~="[--dialog-inset:--spacing(4)]"]):not([class~="p-0"]) {
+  padding: var(--dialog-inset);
+}
+@media (max-width: 39.99rem) {
+  [data-concept="tactile"] :is([class~="[--dialog-inset:--spacing(5)]"], [class~="[--dialog-inset:--spacing(4)]"]):not([class~="p-0"])[class~="max-sm:rounded-b-none"] {
+    padding-bottom: calc(var(--dialog-inset) + env(safe-area-inset-bottom));
+  }
+}
+[data-concept="tactile"] :is([class~="[--dialog-inset:--spacing(5)]"], [class~="[--dialog-inset:--spacing(4)]"]) > :is([data-slot="dialog-body"], [class~="scroll-py-10"], [data-slot="dialog-stepper"]:not([class~="mx-0"])) {
+  margin-inline: calc(var(--dialog-inset) * -1);
+  padding-inline: var(--dialog-inset);
+}
+[data-concept="tactile"] :is([class~="[--dialog-inset:--spacing(5)]"], [class~="[--dialog-inset:--spacing(4)]"]):not([class~="p-0"]) > [class~="absolute"]:is([class~="top-4.5"], [class~="top-3.5"]) {
+  top: calc(var(--dialog-inset) - var(--spacing) * 0.5);
+  right: calc(var(--dialog-inset) - var(--spacing));
+}
+
+/*
+ * The header reads as one block: the title sets solid at 20px so its leading stops padding the
+ * gaps, the mark sits 8px over it, and the last line of text clears the tray's hairline by about what the
+ * sheet's top edge clears the mark, so the header is centred in the space above the tray.
+ * Overrules: `leading-6` on DialogTitle and `-mb-2` on DialogIcon (comfortable).
+ * Coupling: reads those classes of components/ui/dialog/dialog.tsx.
+ */
+[data-concept="tactile"] [class~="[--dialog-inset:--spacing(5)]"] > div > [class~="leading-6"][class~="tracking-tight"] {
+  line-height: calc(var(--spacing) * 5);
+}
+[data-concept="tactile"] [class~="[--dialog-inset:--spacing(5)]"] > [class~="-mb-2"] {
+  margin-bottom: calc(var(--spacing) * -1);
+}
+
+/* With no mark above it, the first line is the 20px title, so the close key rises to its centre. */
+[data-concept="tactile"] [class~="[--dialog-inset:--spacing(5)]"]:not([class~="p-0"]):not(:has(> [class~="-mb-2"])) > [class~="absolute"]:is([class~="top-4.5"], [class~="top-3.5"]) {
+  top: calc(var(--dialog-inset) - var(--spacing));
+}
+
+/*
+ * A bordered dialog footer is the tray the actions rest on: in the dark themes it fills a step
+ * toward the ink, so it reads a shade brighter than the sheet above its hairline. It repaints
+ * `--surface` so a control inside sits on the tray, bleeds to the sheet's edges from
+ * `--dialog-inset` with a 12px band above and below the keys, and rounds its bottom corners inside
+ * the sheet's 1px border.
+ * Overrules: the transparent footer and the `-mx-* px-* py-*` of `DialogFooter bordered`.
+ */
+[data-concept="tactile"] [data-slot="dialog-footer"].border-t {
+  --surface: color-mix(in oklab, var(--popover), var(--foreground) var(--tactile-footer-fill));
+  margin: calc(var(--spacing) * 1) calc(var(--dialog-inset) * -1) calc(var(--dialog-inset) * -1);
+  padding: calc(var(--spacing) * 3) var(--dialog-inset);
+  background-color: var(--surface);
+  border-bottom-left-radius: calc(var(--radius-xl) - 1px);
+  border-bottom-right-radius: calc(var(--radius-xl) - 1px);
+}
+
+/*
+ * In the dark themes every dialog footer is that tray, bordered or not: a plain footer bleeds to
+ * the sheet's edges and takes the hairline, reading the sheet's inset from `--dialog-inset`.
+ * Overrules: the unbordered `DialogFooter`, which sits inside the sheet's padding.
+ */
+:is(.dark, .moonlight)[data-concept="tactile"] [data-slot="dialog-footer"],
+[data-concept="tactile"] :is(.dark, .moonlight) [data-slot="dialog-footer"] {
+  --surface: color-mix(in oklab, var(--popover), var(--foreground) var(--tactile-footer-fill));
+  margin: calc(var(--spacing) * 1) calc(var(--dialog-inset) * -1) calc(var(--dialog-inset) * -1);
+  padding: calc(var(--spacing) * 3) var(--dialog-inset);
+  border-top: 1px solid var(--border);
+  background-color: var(--surface);
+  border-bottom-left-radius: calc(var(--radius-xl) - 1px);
+  border-bottom-right-radius: calc(var(--radius-xl) - 1px);
+}
+
+/* Forced colors drop shadows, so keys, trays and thumbs fall back to real borders. */
+@media (forced-colors: active) {
+  [data-concept="tactile"] :is([data-slot="button"][class~="shadow-xs"], [data-slot="switch"], [data-slot="slider-track"], [data-slot="tabs-list"]:not([data-orientation="vertical"]), [data-slot="toggle-group"][data-thumb]) {
+    border: 1px solid ButtonText;
+  }
+  [data-concept="tactile"] :is([data-slot="switch-thumb"], [data-slot="slider-thumb"], [data-slot="tabs-list"]:not([data-orientation="vertical"]) > [data-slot="tabs-indicator"].bg-background, [data-slot="toggle-group-indicator"] > span, [data-slot="tab-strip-item"][data-active="true"]) {
+    border: 1px solid Highlight;
+  }
+}
+
+/* Reduced motion: every tactile transition above is instant. */
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="tactile"] :is([data-slot="button"], [data-slot="input-root"], [data-slot="textarea-root"], [data-slot="select-trigger"], [data-slot="native-select-field"], [data-slot="slider-thumb"]) {
+    transition-duration: 0s;
+  }
+}

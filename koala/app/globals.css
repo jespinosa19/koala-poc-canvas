@@ -1,0 +1,3684 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/* Saved design settings, written by the configurator at /lab/configurador (lib/design-config.ts).
+   Imported before concepts so a concept still wins its ties. */
+@import "./design-config.css";
+/* Concepts: the personality axis (`data-concept`). Kept in its own file so this one stays the token
+   layer; see the header of app/concepts.css for how a concept is written and why part of it is
+   deliberately unlayered. */
+@import "./concepts.css";
+
+/* Moonlight is a dark context too, so `dark:` utilities apply under it as well. The nearest theme
+   class wins: an element inside a `.light` / `.cream` scope that itself sits inside a dark one (a
+   page pinned light while the visitor's theme is dark) is NOT a dark context, so `dark:` stays off
+   there. Without the `:not()`, the pinned scope would repaint its tokens light but still fire every
+   `dark:` utility inside it. An always-dark `.dark` band under a light `<html>` is unaffected.
+   The inner `:not()` looks one level further, so a `.dark` band inside that light pin is dark
+   again: the docked `Layout`'s rail, which pins itself `.dark`, previewed light on a dark site. */
+@custom-variant dark (&:is(.dark *, .moonlight *):not(:is(.dark, .moonlight) :is(.light, .cream) *:not(:is(.dark, .moonlight) :is(.light, .cream) :is(.dark, .moonlight) *)));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  /* The app canvas: the dark frame of an app shell, the floor its rail and top band sit on and
+     that shows as a gutter around the content sheet. The same near-black in every theme (see
+     `:root` below), so no other role can play it: the page ground is white in light and cream. */
+  --color-canvas: var(--canvas);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-placeholder: var(--placeholder);
+  /* Reading ink: long-form copy (a section lede, a testimonial, a FAQ answer, a card description),
+     one step darker than --muted-foreground, which stays the ink for META (captions, roles, dates,
+     placeholders, icons). Muted body copy read as washed out beside a heading; see FOUNDATIONS.md. */
+  --color-body: var(--body);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  /* Status roles: soft badges derive their tint via opacity (bg-success/10 + text-success). */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  /* Soft-badge text: a darker, more legible counterpart to each status hue, for text sitting
+     on the /10 tint (the bright -500 hues read too light as text). Themed per block below:
+     darker in light, equal to the base hue in dark themes (already bright for dark surfaces).
+     Mirrors the --border-soft pattern. */
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-info-strong: var(--info-strong);
+  --color-destructive-strong: var(--destructive-strong);
+  /* Hyperlink color: the one role for inline text links (text-link / decoration-link). The text
+     color, not the accent (the accent is for buttons and focus rings only); the underline marks
+     the link. Distinct from --info (a status hue). Per-theme below. */
+  --color-link: var(--link);
+  /* Categorical hues: for labels, tags, and category badges. */
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-teal: var(--teal);
+  --color-orange: var(--orange);
+  /* Chart roles (see "Chart: data palette" below): a validated categorical order (chart-1…8),
+     a one-hue sequential ramp (seq-1…7, low → high magnitude), a diverging ramp (div-1…7, div-4
+     is the neutral midpoint) and a status set reserved for state, never reused as "series 4". */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-seq-1: var(--chart-seq-1);
+  --color-chart-seq-2: var(--chart-seq-2);
+  --color-chart-seq-3: var(--chart-seq-3);
+  --color-chart-seq-4: var(--chart-seq-4);
+  --color-chart-seq-5: var(--chart-seq-5);
+  --color-chart-seq-6: var(--chart-seq-6);
+  --color-chart-seq-7: var(--chart-seq-7);
+  --color-chart-div-1: var(--chart-div-1);
+  --color-chart-div-2: var(--chart-div-2);
+  --color-chart-div-3: var(--chart-div-3);
+  --color-chart-div-4: var(--chart-div-4);
+  --color-chart-div-5: var(--chart-div-5);
+  --color-chart-div-6: var(--chart-div-6);
+  --color-chart-div-7: var(--chart-div-7);
+  --color-chart-good: var(--chart-good);
+  --color-chart-warning: var(--chart-warning);
+  --color-chart-serious: var(--chart-serious);
+  --color-chart-critical: var(--chart-critical);
+  /* Rating fills: a vivid decorative gold for stars and a love-red for hearts. These stay
+     brighter/more saturated than the --warning status hue so the two never read as the same
+     gold; a star/heart glyph is a saturated fill, not text, so it reads clearly on any
+     background. Theme-agnostic (see --brand). */
+  --color-rating: var(--rating);
+  --color-rating-red: var(--rating-red);
+  /* koala:site-only */
+  /* The Webflow trace palette (components/site/*): exact Webflow values in light, Koala roles in
+     the other themes. See "Trace palette" below. */
+  --color-trace-ground: var(--trace-ground);
+  --color-trace-heading: var(--trace-heading);
+  --color-trace-ink: var(--trace-ink);
+  --color-trace-muted: var(--trace-muted);
+  --color-trace-stroke: var(--trace-stroke);
+  --color-trace-stroke-strong: var(--trace-stroke-strong);
+  --color-trace-hairline: var(--trace-hairline);
+  --color-trace-wash: var(--trace-wash);
+  --color-trace-wash-warm: var(--trace-wash-warm);
+  --color-trace-wash-strong: var(--trace-wash-strong);
+  --color-trace-focus: var(--trace-focus);
+  /* koala:end-site-only */
+  --color-border: var(--border);
+  /* Soft border: a subtler stroke for large surfaces (dialogs, sheets) where the
+   * standard --border reads too heavy. Derived per theme from each theme's own --border
+   * (see the theme blocks below), so it tracks every palette automatically. */
+  --color-border-soft: var(--border-soft);
+  /* Edge: the hairline an in-flow container draws as a ring (box-shadow) instead of a border, paired
+   * with shadow-xs. Lighter than --border on the light grounds, where the lift carries part of the
+   * edge; equal to it on the dark ones, where a shadow does not read. See FOUNDATIONS.md. */
+  --color-edge: var(--edge);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-foreground: var(--brand-foreground);
+  /* Chat sent-bubble fill: a fixed saturated blue-600 (theme-agnostic, like --brand/--rating), so
+     the "you" turn reads the same friendly blue under every theme and carries white text at AA on
+     any surface. Distinct from --link, which tracks the accent (see above). */
+  --color-chat-sent: var(--chat-sent);
+  /* Phosphor: the lit inks of a device's display (HandheldDevice: its LCD, LEDs and lit keys). Light
+     sources, not text on a ground, so like --rating they are theme-agnostic: the device is a physical
+     object and glows the same under every theme. Green reads ready/ok, yellow attention, orange a
+     read error, red an alarm. */
+  --color-phosphor: var(--phosphor);
+  --color-phosphor-yellow: var(--phosphor-yellow);
+  --color-phosphor-orange: var(--phosphor-orange);
+  --color-phosphor-red: var(--phosphor-red);
+
+  /* Syntax tokens: consumed by CodeSnippet's highlighter, themed per theme below. */
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-comment: var(--syntax-comment);
+  --color-syntax-function: var(--syntax-function);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-tag: var(--syntax-tag);
+  --color-syntax-attribute: var(--syntax-attribute);
+  --color-syntax-punctuation: var(--syntax-punctuation);
+
+  /* Inter carries UI + body; DM Sans carries headings (--font-heading, applied to h1–h4 in
+     @layer base; h5/h6 stay in Inter). Both are wired via next/font in layout.tsx;
+     code/labels fall back to the platform monospace. */
+  /* The fallbacks are for a project that has not wired the faces yet (a fresh `koalaui init`):
+     it reads in the platform sans instead of the browser's serif default. */
+  --font-sans: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  /* The mono face goes through `--font-mono-face` rather than sitting here as a literal. Inside an
+     `inline` @theme a literal is baked into `.font-mono` at build time, which made this the one
+     family token a scope could not re-point: a concept (app/concepts.css) that wants a real mono
+     could swap `--font-sans` but never the 14 deliberate `font-mono` call sites. The fallback IS
+     the previous value, so nothing changes until something sets the face. */
+  --font-mono: var(--font-mono-face, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace);
+  --font-heading: var(--font-heading, var(--font-sans, ui-sans-serif, system-ui, sans-serif));
+  /* The face of a lit device display (HandheldDeviceScreen). A seam, like `--font-mono-face`: it reads
+     `--font-lcd` when the app sets one (the docs load Share Tech Mono into it through next/font) and
+     falls back to the mono stack, so a project that never sets it still reads as a terminal. */
+  --font-lcd: var(--font-lcd, var(--font-mono-face, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace));
+
+  /* Marketing container escape hatch: one step past Tailwind's `7xl` (80rem/1280px), which IS the
+     canonical marketing cap (SectionContainer width="wide"). 1440 is a *viewport* — the Figma
+     artboard — not a container: capping a section at it makes the band run edge to edge on a 1440
+     laptop with no outer margin at all. This token stays only for the rare band that must run wider
+     than the canon, reachable as SectionContainer width="xlarge". Extends the `--container-*`
+     namespace, so it generates the `max-w-8xl` utility. */
+  --container-8xl: 90rem; /* 1440px */
+
+  /* Quarter-step multipliers off a 1rem (16px) --radius land every step on the 4px grid:
+     sm 8 · md 12 · lg 16 · xl 20 · 2xl 24 · 3xl 28 · 4xl 32. */
+  /* `xs` is the one off-grid step: 5px, for boxes so small that `sm` (8px) would round them into
+     a circle. The 16px drag handles of ColorPicker are the case it exists for. */
+  --radius-xs: calc(var(--radius) * 0.3125); /* 5px */
+  --radius-sm: calc(var(--radius) * 0.5); /* 8px */
+  --radius-md: calc(var(--radius) * 0.75); /* 12px */
+  --radius-lg: var(--radius); /* 16px */
+  --radius-xl: calc(var(--radius) * 1.25); /* 20px */
+  --radius-2xl: calc(var(--radius) * 1.5); /* 24px */
+  --radius-3xl: calc(var(--radius) * 1.75); /* 28px */
+  --radius-4xl: calc(var(--radius) * 2); /* 32px */
+  /* The pill: fully round at every preset of the knob, square only at `None` (0 x 1000 = 0). A
+     plain `rounded-full` would ignore the knob and leave pill buttons in a sharp system. Buttons use it.
+     The multiplier is a variable so a scope can unpill the system WITHOUT flattening the radius knob
+     to 0: `--radius-pill-factor: 1` makes every pill take the plain `--radius` instead. That is the
+     only seam for it, because an `inline` @theme bakes this calc into `.rounded-pill`, so overriding
+     `--radius-pill` itself does nothing. Default 1000 = the behaviour above, unchanged. */
+  --radius-pill: calc(var(--radius) * var(--radius-pill-factor, 1000));
+
+  /* Shadow tokens: per-theme values, so dark surfaces stay legible. */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /*
+   * Motion tokens: expose easing/durations as Tailwind utilities (ease-out, duration-base, …).
+   * NOTE: Tailwind v4's namespaces are `--ease-*` and `--transition-duration-*` (NOT `--duration-*`,
+   * which generates no utilities). The raw values live in `:root` below and in lib/motion.ts.
+   */
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+  --ease-drawer: var(--ease-drawer);
+  --ease-spring: var(--ease-spring);
+  --ease-lift: var(--ease-lift);
+  --ease-sine: var(--ease-sine);
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-base: var(--duration-base);
+  --transition-duration-slow: var(--duration-slow);
+  /* A paper feed's travel (HandheldDevicePrinter): see --duration-feed below. */
+  --transition-duration-feed: var(--duration-feed);
+
+  /*
+   * Check-draw: the Checkbox indicator's stroked glyph draws itself on check. The path is
+   * normalized to length 1 (`pathLength={1}`) with `stroke-dasharray: 1`, so sweeping the dash
+   * offset 1→0 reveals the stroke end-to-end. One-shot enter on mount, so a keyframe (#4), not a
+   * transition. Backed by the motion tokens: no raw duration/easing in the component.
+   */
+  --animate-check-draw: check-draw var(--duration-base) var(--ease-out);
+
+  /*
+   * Shimmer: the Skeleton's optional sweeping highlight. A translucent gradient overlay
+   * is swept across the placeholder via a one-axis transform. Unlike the fast/base/slow
+   * scale (built for one-shot UI transitions), an ambient infinite loop wants a longer,
+   * calmer cadence, hence 1.6s, defined here in the token layer rather than a component.
+   */
+  --animate-shimmer: shimmer 1.6s var(--ease-in-out) infinite;
+
+
+  /*
+   * Ink sweep: the band that passes through a live line of text (see the `ink-sweep` utility).
+   * Slower than the Skeleton shimmer: it rides on words someone may be reading, so it has to
+   * read as a pulse of activity, not a flicker across the letters.
+   */
+  --animate-ink-sweep: ink-sweep 2.2s var(--ease-in-out) infinite;
+
+  /*
+   * Halftone: the dot field a Generation waits in. Slower again than the shimmer (2.8s), because
+   * this one is not a sweep passing by but a whole surface breathing — at the shimmer's cadence it
+   * reads as a flicker. See the --generation-dot property above.
+   */
+  --animate-generation-halftone: generation-halftone 2.8s var(--ease-sine) infinite;
+
+  /*
+   * Stagger-in: the entrance each item plays inside a <Stagger> list/grid (lib/stagger.tsx). A
+   * small rise + fade; the cascade comes from the per-item `animation-delay` (index × step), not
+   * the keyframe. `both` fill holds a not-yet-started item at the `from` state so nothing flashes
+   * in before its turn. One-shot on mount, so a keyframe (#4), not a transition.
+   */
+  --animate-stagger-in: stagger-in var(--duration-base) var(--ease-out) both;
+
+  /*
+   * Stagger-in (blur): the same rise + fade entrance as stagger-in, plus a 4px → 0 defocus so each
+   * unit resolves into focus as it arrives (the icon-swap blur value from the polish skill, applied
+   * to text). The opt-in `blur` flavor of a SectionHeader/Stagger cascade; same one-shot-on-mount
+   * `both` fill so a not-yet-started unit holds the blurred `from` state. Reduced-motion drops it.
+   */
+  --animate-stagger-in-blur: stagger-in-blur var(--duration-base) var(--ease-out) both;
+
+  /*
+   * Channel-chat-in: a message that ARRIVES in a ChannelChat log (a teammate just posted). Half the
+   * rise of stagger-in (0.25rem): a log line is short and arrives on its own, so the full step read
+   * as a hop. Played only by rows stamped `data-fresh` after the log has settled, never by the
+   * history it opened with; the part pairs it with `motion-reduce:animate-none`.
+   */
+  --animate-channel-chat-in: channel-chat-in var(--duration-base) var(--ease-out) both;
+
+  /*
+   * Table-reveal: the expandable detail panel a DataTable renders under a row (renderSubRow).
+   * A grid wrapper tweens its single track 0fr→1fr (a real height expand with no fixed value to
+   * guess) while the panel fades in. One-shot on mount when the row expands, so a keyframe (#4),
+   * not a transition. Backed by the motion tokens: no raw duration/easing in the component.
+   */
+  --animate-table-reveal: table-reveal var(--duration-base) var(--ease-out);
+
+  /*
+   * Disclosure: the height tween of every Radix disclosure panel (Accordion, Collapsible, the
+   * Sidebar's collapsible groups and nested lists, Tree branches, Plan steps, Chat reasoning).
+   * Radix measures the panel into --radix-collapsible-content-height (Accordion content carries it
+   * too), so one pair serves both. The clip rides IN the keyframes: the panel clips only while its
+   * height tweens, and then with a 3px margin, so at rest it paints its children's focus rings, edge rings and
+   * shadows instead of shaving them flush with its box. Never put overflow-hidden on the panel
+   * itself; give a block panel `flow-root` so the clip-free rest state still contains margins.
+   */
+  --animate-disclosure-open: disclosure-open var(--duration-base) var(--ease-out);
+  --animate-disclosure-close: disclosure-close var(--duration-base) var(--ease-out);
+
+  /*
+   * Indicator: the NavigationMenu tip's enter/exit, the same fade + 0.5rem drop the panel under it
+   * plays (slide-in-from-top-2), so tip and panel travel as one. It moves `translate`, never
+   * `transform`: Radix writes the tip's x offset to `transform`, and tw-animate's enter/exit
+   * keyframes animate `transform`, which flung the tip in from (and back out to) the first trigger.
+   */
+  --animate-indicator-in: indicator-in var(--duration-base) var(--ease-out);
+  --animate-indicator-out: indicator-out var(--duration-base) var(--ease-out);
+
+  /*
+   * Presence-hold: lets a Radix surface leave with a TRANSITION (interruptible: a half-open menu
+   * closes from where it is, one reopened mid-exit turns around) instead of a keyframe, which
+   * restarts from fully shown. Presence only waits on an *animation* before it unmounts, so the
+   * closed state runs this no-op for the exit's length while the transition does the fading. It
+   * animates nothing visible on purpose: a keyframe holding opacity would win once the transition
+   * ends and flash the surface back for a frame.
+   */
+  --animate-presence-hold: presence-hold var(--duration-base) linear;
+
+  /*
+   * Banner-confetti: one piece's flight for the festive Banner's `confetti` burst. Each piece is
+   * spawned imperatively with randomized end vectors (`--cx`/`--cy`/`--cr`) and self-removes on
+   * animationend, so this is a one-shot enter (a keyframe, #4), not a transition. A bespoke 900ms
+   * cadence (longer than the base scale) lives here in the token layer like shimmer/typing.
+   */
+  --animate-banner-confetti: banner-confetti 900ms var(--ease-out) forwards;
+
+  /*
+   * Banner-pop: the quick squash-and-wiggle the BannerIcon plays on each confetti burst. Re-armed
+   * imperatively (remove → reflow → add the class), so a one-shot keyframe on a spring ease.
+   */
+  --animate-banner-pop: banner-pop var(--duration-base) var(--ease-spring);
+
+  /*
+   * Marquee: the seamless horizontal drift behind a marquee row (e.g. the Gallery marquee
+   * section). The track holds its tile set twice and is translated by -50% so the loop returns to
+   * its start with no seam; a second row adds `[animation-direction:reverse]` to drift the other
+   * way. An ambient infinite loop like shimmer/banner-festive, so it lives here in the token layer,
+   * not inline. The cadence is overridable per row via `--marquee-duration`. Linear (not eased) so
+   * the scroll reads as a constant glide, never accelerating between loops.
+   */
+  --animate-marquee: marquee var(--marquee-duration, 40s) linear infinite;
+
+  /*
+   * Dash flow: the dashed connectors of a line-art backdrop (the site footer's constellation) creep
+   * along their path. The keyframe shifts `stroke-dashoffset` by exactly four periods of the `4 6`
+   * dash pattern it is written for, so the loop has no seam. Ambient and slow on purpose: it reads
+   * as drift, never as a loader. Call sites pair it with `motion-reduce:animate-none`.
+   */
+  --animate-dash-flow: dash-flow var(--dash-flow-duration, 6s) linear infinite;
+
+  /*
+   * Agent edge flow (AgentTree): a light runs the whole route from the parent to a working agent,
+   * a streak of short dashes with a fading tail, then rests off the end; the head flashes as it
+   * arrives (same cadence, so the two stay in step). Paired with motion-safe at the call site.
+   */
+  --animate-agent-edge-flow: agent-edge-flow 2.2s var(--ease-in-out) infinite;
+  --animate-agent-edge-flash: agent-edge-flash 2.2s var(--ease-in-out) infinite;
+
+  /*
+   * Logo swap (social-proof walls): the rotating "trusted by" logos cross-fade with a vertical roll.
+   * `roll-out` lifts the outgoing wordmark up and blurs it away; `roll-in` rises the incoming one from
+   * below into focus. Two directional keyframes (not a symmetric transition) keep the motion identical
+   * regardless of a layer's prior state; the consumer alternates them each swap and the `both` fill
+   * holds each end state between swaps. Backed by the motion tokens (no raw duration/easing in the
+   * component); decorative, so held static under reduced-motion.
+   */
+  --animate-logo-roll-in: logo-roll-in var(--duration-slow) var(--ease-out) both;
+  --animate-logo-roll-out: logo-roll-out var(--duration-slow) var(--ease-out) both;
+
+
+  /*
+   * Chart load reveals: the one-shot intro a Chart's data layers play when they first mount (the
+   * parts only render once the box is measured, so this fires exactly as the chart appears). Four
+   * coordinated keyframes, one per data part, all backed by the motion tokens:
+   *
+   *  - chart-draw  the ChartLine self-draws left→right. The path is normalized to length 1
+   *                (pathLength={1}) with stroke-dasharray:1, so sweeping stroke-dashoffset 1→0
+   *                reveals the trend end-to-end, the same technique as the Checkbox check-draw,
+   *                slowed to --duration-slow for the longer path.
+   *  - chart-area  the ChartArea fill fades + rises a hair from the plot floor, so it grows up
+   *                under the line as it draws (scaleY origin at the bottom, set at the call site).
+   *  - chart-bar   each ChartBar column grows up from the 0-anchored baseline; the left→right
+   *                cascade comes from a per-index animation-delay at the call site (like stagger-in),
+   *                not the keyframe.
+   *  - chart-bar-x the same grow turned sideways, for ChartBarsHorizontal rows: each row scales out
+   *                from the zero line (transform-origin set at the call site), staggered top→bottom.
+   *
+   * Bars use `both` fill so a not-yet-started (delayed) column holds its `from` state instead of
+   * flashing the final frame; honored by reduced-motion at the call site (motion-reduce:animate-none),
+   * which leaves every layer at its drawn/visible end state.
+   */
+  --animate-chart-draw: chart-draw var(--duration-slow) var(--ease-out) both;
+  --animate-chart-area: chart-area var(--duration-slow) var(--ease-out) both;
+  --animate-chart-bar: chart-bar var(--duration-base) var(--ease-out) both;
+  --animate-chart-bar-x: chart-bar-x var(--duration-base) var(--ease-out) both;
+
+  /*
+   * Map pin pulses: the live halo of a MapPin symbol (`pulse`). A disc of the pin's colour scaled up
+   * with `transform` and faded with `opacity` (never a box-shadow spread, which would need
+   * color-mix to fade an arbitrary colour, nor the standalone `scale` property: both are missing
+   * in old Chromium shells). `ping` is slow, for a unit on duty, so forty of them breathe instead
+   * of flickering; `alert` is faster and stronger, for a panic button, with an echo half a beat
+   * behind so the alarm never goes quiet. Held still under reduced-motion at the call site.
+   */
+  --animate-map-pin-ping: map-pin-ping 2s var(--ease-out) infinite;
+  --animate-map-pin-alert: map-pin-alert 1.2s var(--ease-out) infinite;
+  --animate-map-pin-alert-echo: map-pin-alert 1.2s var(--ease-out) 0.6s infinite;
+
+  /*
+   * Progress indeterminate: when a Progress has no known value (`value={null}`), the fill becomes
+   * a short pill that sweeps the track instead of measuring anything. It travels well past both
+   * edges, so the bar reads as "working" with no implied percentage. `ease-in-out` (not a
+   * decelerate curve) keeps the sweep symmetric: it eases out of the left edge and into the right
+   * one, so neither end feels like an arrival.
+   */
+  --animate-progress-indeterminate: progress-indeterminate 1.4s var(--ease-in-out) infinite;
+
+  /*
+   * Dot matrix: the DotMatrix loader. A light runs a 5x5 grid of dots in a spiral, from the edge
+   * into the center, and wraps around, trailing a fading tail. Every dot plays the same keyframes,
+   * phased by `--dot-phase`: its place on the spiral as a fraction of a lap, negative, so the loop
+   * is already in its steady state on the first frame instead of lighting up dot by dot. The delay
+   * rides inside the token for the hero cursors' reason: the `animate-*` utility writes the whole
+   * `animation` shorthand, which would reset a separate delay to 0.
+   *
+   * A lap every 1.1s, one dot every 44ms: quick enough to read as motion, slow enough that the tail
+   * still reads as a trail. A bespoke cadence like shimmer's, past the `--duration-*` scale, which
+   * is for one-shot transitions. `linear`, because the shape of the flare lives in the keyframe
+   * stops. A container can retime it with `--dot-matrix-duration`.
+   */
+  --animate-dot-matrix: dot-matrix-spiral var(--dot-matrix-duration, 1.1s) linear calc(var(--dot-phase, 0) * var(--dot-matrix-duration, 1.1s)) infinite;
+
+  /*
+   * LCD faults: HandheldDeviceScreen's `fault`. `lcd-flicker` is a loose contact: the picture dips a
+   * few times every 1.5s and comes back. `lcd-glitch` is a broken panel: the picture jumps, skews
+   * and drops out on a hard 0.3s cadence (`steps(1)`: no in-betweens, every stop is a frame of its
+   * own) while its color swims on a slower 0.8s one; `lcd-tear` runs torn bands over it. Ambient
+   * loops with bespoke cadences, like shimmer, so they live here in the token layer and never in a
+   * component. The screen drops all three under reduced motion and holds the bands still.
+   */
+  --animate-lcd-flicker: lcd-flicker 1.5s linear infinite;
+  --animate-lcd-glitch: lcd-glitch 0.3s steps(1) infinite, lcd-glitch-hue 0.8s linear infinite;
+  --animate-lcd-tear: lcd-tear 0.5s steps(1) infinite;
+
+  /*
+   * Progress timer: a timed Progress (`duration`) runs its own fill over time. The fill is the
+   * full-length pill slid along the track on `transform` (compositor-only: no width animation, no
+   * layout per frame), and the track clips it, so the leading cap keeps its dome at every point
+   * instead of squashing the way a scale would. `fill` plays the keyframes forwards (empty → full);
+   * `drain` plays them in reverse (`animation-direction: reverse`), so one pair of keyframes serves
+   * both. The length is the component's own `--progress-duration` (the `duration` prop, a runtime
+   * value), `linear` because time does not ease, and `both` so a paused bar at rest shows its
+   * starting edge and a finished one holds its end. `animation-play-state` pauses it.
+   * Under reduced motion the component swaps the timing to `steps(var(--progress-steps))`: the bar
+   * ticks about once a second instead of gliding, so the time left still reads.
+   */
+  --animate-progress-timer: progress-timer var(--progress-duration, 0s) linear both;
+  --animate-progress-timer-y: progress-timer-y var(--progress-duration, 0s) linear both;
+
+  /*
+   * OTP shake: the short horizontal wobble an OTPInput's digit row plays when a submitted code
+   * comes back wrong. A one-shot keyframe (#4), not a transition, and re-armed imperatively
+   * (remove → reflow → add) like banner-pop, because the same verdict can be raised twice in a
+   * row and the second rejection must still register. Amplitude reads from `--shake-distance`
+   * so the recipe can scale the throw per size. No `forwards` fill: the row rests at its natural
+   * position, which is exactly what makes the re-arm clean.
+   *
+   * `--ease-sine` is load-bearing, not decoration: a multi-stop keyframe applies its timing
+   * function to *every* segment, so a decelerate curve makes each swing snap out and stall at its
+   * extreme, and the whole thing reads as a buzz. Sine leaves and arrives at zero velocity, so the
+   * swings join into one continuous arc.
+   *
+   * 650ms is a bespoke cadence, like shimmer's 1.6s and banner-confetti's 900ms: the
+   * `--duration-*` scale tops out at 450ms because it is tuned for a value travelling A→B once,
+   * and a three-swing settle needs roughly half again as long before it stops reading as a flinch.
+   */
+  --animate-otp-shake: shake 650ms var(--ease-sine);
+
+  /*
+   * The same settle, reusable. `shake-a` / `shake-b` play identical keyframes under two names: a
+   * component that re-raises a rejection from state alternates between them, and swapping the
+   * animation-name restarts the animation with no remove/reflow/add dance (Toast's re-raised
+   * error). The amplitude reads `--shake-distance`.
+   */
+  --animate-shake-a: shake 650ms var(--ease-sine);
+  --animate-shake-b: shake-alt 650ms var(--ease-sine);
+
+  /*
+   * Talk halo: the ring PushToTalk sends out while it is live, the universal "on air" signal. It
+   * is a box-shadow spread rather than a scale, so it grows the same few pixels around a 40px
+   * circle and a full-width pill alike. Two staggered copies make a continuous pulse.
+   */
+  --animate-talk-halo: talk-halo 1200ms var(--ease-out) infinite;
+  --animate-talk-halo-echo: talk-halo 1200ms var(--ease-out) 600ms infinite;
+
+  /*
+   * Voice level: the four bars of a VoiceRoster member's meter while they talk. Not one curve
+   * phase-shifted across the bars, which reads as a mechanical chase, but four of their own: each bar
+   * has its own floor, its own peak and its own period, so together they read as an irregular voice
+   * waveform. `--ease-sine` because each one oscillates (see the shake); the delays are negative so
+   * every bar is already mid-swing on the first frame instead of starting in step. Bespoke
+   * half-second cadences, past the `--duration-*` scale like the shake's. `transform`, never the
+   * standalone `scale`, so the wave runs in the older engines a game overlay lives in.
+   */
+  --animate-voice-level-1: voice-level-1 560ms var(--ease-sine) infinite;
+  --animate-voice-level-2: voice-level-2 480ms var(--ease-sine) -90ms infinite;
+  --animate-voice-level-3: voice-level-3 620ms var(--ease-sine) -200ms infinite;
+  --animate-voice-level-4: voice-level-4 500ms var(--ease-sine) -40ms infinite;
+
+  /*
+   * Blink: the Dot's `pulse="blink"`, the recording light of a camera or a bodycam ("REC"). One
+   * second on, one second off, the cadence people already read as "recording", so it is a 2s loop
+   * of two plateaus with a short fade at each edge (linear: a curve between two holds only smears
+   * the edge). Not the --duration-* scale, which is built for one-shot UI transitions. Decorative
+   * on top of a still dot, so it stands down under reduced-motion at the call site
+   * (motion-reduce:animate-none) and the dot stays lit.
+   */
+  --animate-blink: blink 2s linear infinite;
+
+  /*
+   * Live ping: the Dot's `pulse="ping"`, a halo that grows out of a "live / on duty" dot and fades.
+   * A copy of the dot scaled up with `transform` (never the standalone `scale` property, which old
+   * Chromium shells lack) rather than a box-shadow spread, so it needs no color-mix to fade: the
+   * opacity does it. Slower than Tailwind's 1s `ping` so a roster full of live units breathes
+   * instead of flickering. Held off under reduced-motion at the call site.
+   */
+  --animate-live-ping: live-ping 1.6s var(--ease-out) infinite;
+
+  /*
+   * Carousel fade (`effect="fade"`): the incoming slide fades in ON TOP of the outgoing one, which
+   * holds fully visible underneath and only hides when the fade is done. A symmetric cross-fade
+   * would dip both to half and let the page show through mid-way; this never does. Photo-length,
+   * so past the `--duration-*` scale on purpose.
+   */
+  --animate-carousel-fade-in: carousel-fade-in 900ms var(--ease-in-out) both;
+  --animate-carousel-fade-out: carousel-fade-out 900ms linear both;
+
+  /*
+   * Ken Burns (`kenBurns`): a slow push-in and drift on a slide's photo while it shows. It runs a
+   * little longer than the slide stays up (`--carousel-interval`, set from `autoplay`), so it never
+   * comes to rest on screen. The drift direction is per slide (`--kb-x` / `--kb-y`).
+   */
+  --animate-ken-burns: ken-burns calc(var(--carousel-interval, 6000ms) + 1500ms) linear both;
+
+  /*
+   * The autoplay countdown inside the active dot or line: fills across exactly one interval, and
+   * pauses with the carousel (`animation-play-state`), so it always says how long is left.
+   */
+  --animate-carousel-fill: carousel-fill var(--carousel-interval, 6000ms) linear both;
+
+  /*
+   * Toast pop: a re-raised confirmation (the same `id` again, or a promise that resolved) dips a hair
+   * and springs back past full size before settling. `--ease-spring` is the confirmations-only
+   * overshoot; the a/b pair restarts it the same way as the shake.
+   */
+  --animate-toast-pop-a: toast-pop var(--duration-base) var(--ease-spring);
+  --animate-toast-pop-b: toast-pop-alt var(--duration-base) var(--ease-spring);
+
+  /*
+   * Toast countdown: the hairline along a toast's bottom edge drains across exactly its `duration`
+   * (`--toast-duration`, set inline) and pauses with the toast through `animation-play-state`.
+   */
+  --animate-toast-countdown: toast-countdown var(--toast-duration, 5000ms) linear both;
+
+  /*
+   * Hero cursors: the "multiplayer" cursors that wander a Hero's side gutters (HeroCursor). Three
+   * keyframes share ONE loop, so they must share one duration and one delay: each cursor sets
+   * `--cursor-duration` (its loop length) and `--cursor-delay` (a negative phase, so siblings run
+   * out of sync), and all three tokens read both. The delay lives inside the token because the
+   * `animate-*` utility writes the `animation` shorthand, which would reset a separate delay to 0.
+   *
+   *  - cursor-drift  the whole cursor (arrow + label) travels a four-waypoint loop on the standalone
+   *                  `translate` property, holding still at 20-30% and 70-80%. `--ease-sine` is
+   *                  load-bearing for the same reason as the shake: a multi-stop keyframe applies its
+   *                  curve to every segment, and only a zero-velocity curve joins them into a glide.
+   *                  The loop's size reads `--cursor-x` / `--cursor-y`.
+   *  - cursor-click  the arrow presses (scale toward its tip) in the middle of each hold.
+   *  - cursor-ping   a soft disk ripples out of the tip right as the press bottoms out.
+   *
+   * Ambient infinite loops with bespoke multi-second cadences, like marquee and shimmer, so they live
+   * here in the token layer. Compositor-only properties (translate / scale / opacity). Decorative:
+   * the part drops them under reduced motion and the cursors hold still in place.
+   */
+  --animate-cursor-drift: cursor-drift var(--cursor-duration, 16s) var(--ease-sine) var(--cursor-delay, 0s) infinite;
+  --animate-cursor-click: cursor-click var(--cursor-duration, 16s) var(--ease-out) var(--cursor-delay, 0s) infinite;
+  --animate-cursor-ping: cursor-ping var(--cursor-duration, 16s) var(--ease-out) var(--cursor-delay, 0s) infinite;
+}
+
+/*
+ * Recipe-level knobs: emitted as real variables (plain @theme, not inline) so a scope or the saved
+ * design settings (app/design-config.css) can retune them.
+ *  - --spacing-control-*      the control height ladder, `h-control-sm|md|lg|xl` (see the
+ *                             form-control height model in lib/density.tsx).
+ *  - --default-border-width   what a bare `border` draws. Tailwind inlines it at build time, so it
+ *                             points at `--hairline` (:root, below), the variable that retunes;
+ *                             a hairline is 0.5px.
+ *  - --font-figure, --font-weight-numeral, --tracking-figure   the voice of a headline number
+ *                             (Stat value): `font-figure font-numeral tracking-figure`.
+ */
+@theme {
+  --spacing-control-sm: 2rem;
+  --spacing-control-md: 2.25rem;
+  --spacing-control-lg: 2.5rem;
+  --spacing-control-xl: 2.75rem;
+  --default-border-width: var(--hairline);
+  --font-figure: var(--font-heading);
+  --font-weight-numeral: 600;
+  --tracking-figure: -0.025em;
+}
+
+:root {
+  --hairline: 1px;
+}
+
+/* The LCD faults (see --animate-lcd-*). Discrete stops: the flicker dips and recovers within a
+   percent, the glitch is played with steps(1), so every stop below is a frame of its own. */
+@keyframes lcd-flicker {
+  0% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0.4;
+  }
+  16% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  51% {
+    opacity: 0.3;
+  }
+  54% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.6;
+  }
+  76% {
+    opacity: 1;
+  }
+}
+
+@keyframes lcd-glitch {
+  0%,
+  35%,
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) skewX(0deg);
+  }
+  5% {
+    opacity: 0.2;
+    transform: translate(-3px, 1px) skewX(-2deg);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(2px, -1px) skewX(1deg);
+  }
+  15% {
+    opacity: 0.6;
+    transform: translate(0, 2px) skewX(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-1px, 0) skewX(-1deg);
+  }
+  30% {
+    opacity: 0.3;
+    transform: translate(4px, -2px) skewX(3deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-2px, 1px) skewX(-1deg);
+  }
+  55% {
+    opacity: 0.1;
+    transform: translate(3px, 0) skewX(2deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(0, -1px) skewX(0deg);
+  }
+  75% {
+    opacity: 0.4;
+    transform: translate(1px, 2px) skewX(-2deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-3px, 0) skewX(1deg);
+  }
+  90% {
+    opacity: 0.5;
+    transform: translate(2px, -2px) skewX(-3deg);
+  }
+  95% {
+    opacity: 0.2;
+    transform: translate(0, 1px) skewX(0deg);
+  }
+}
+
+@keyframes lcd-glitch-hue {
+  0%,
+  100% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  20% {
+    filter: hue-rotate(40deg) brightness(1.5);
+  }
+  40% {
+    filter: hue-rotate(-30deg) brightness(0.5);
+  }
+  60% {
+    filter: hue-rotate(60deg) brightness(1.8);
+  }
+  80% {
+    filter: hue-rotate(-20deg) brightness(0.8);
+  }
+}
+
+@keyframes lcd-tear {
+  0%,
+  20%,
+  40%,
+  60%,
+  80%,
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+  10% {
+    clip-path: inset(20% 0 30% 0);
+  }
+  30% {
+    clip-path: inset(60% 0 5% 0);
+  }
+  50% {
+    clip-path: inset(10% 0 70% 0);
+  }
+  70% {
+    clip-path: inset(40% 0 20% 0);
+  }
+  90% {
+    clip-path: inset(80% 0 0 0);
+  }
+}
+
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+/* The DotMatrix tail (see --animate-dot-matrix): a dot flares to full as the light reaches it, steps
+   down over the next third of the lap, and idles near off for the rest of it. */
+@keyframes dot-matrix-spiral {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  8% {
+    opacity: 1;
+  }
+  16% {
+    opacity: 0.644;
+  }
+  24% {
+    opacity: 0.442;
+  }
+  32% {
+    opacity: 0.24;
+  }
+  40% {
+    opacity: 0.12;
+  }
+}
+
+/* Progress timer: the full fill slides in from off the track's start (from the floor, standing up). */
+@keyframes progress-timer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes progress-timer-y {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ink-sweep {
+  /* The mask starts parked with its opaque left third over the line (100%) and slides until its
+   * opaque right third covers it (0%), so the dim band crosses once per cycle. */
+  to {
+    mask-position: 0% 0;
+  }
+}
+
+@keyframes shimmer {
+  /* Start (0%) is the element's own value: the overlay sits at -100% (off the left edge);
+   * sweep it fully across to +100% (off the right edge). */
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes stagger-in-blur {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+@keyframes channel-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes table-reveal {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* Disclosure: overflow is discrete, so it holds the clip for the whole tween and drops back to the
+   panel's own (visible) value the moment the animation ends. `clip` with a 3px clip margin (the
+   width of `brand-ring`, the widest ring in the system) keeps a flush child's edge ring, hairline
+   and focus ring painted on the top and sides WHILE the panel moves, where `hidden` shaved them
+   until the tween ended. Chromium honours the margin only when both axes clip. `hidden` stays
+   first as the fallback for engines without `clip`; one without the margin clips flush, as before. */
+@keyframes disclosure-open {
+  from {
+    height: 0;
+    overflow: hidden;
+    overflow: clip;
+    overflow-clip-margin: 3px;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    overflow: hidden;
+    overflow: clip;
+    overflow-clip-margin: 3px;
+  }
+}
+
+@keyframes disclosure-close {
+  from {
+    height: var(--radix-collapsible-content-height);
+    overflow: hidden;
+    overflow: clip;
+    overflow-clip-margin: 3px;
+  }
+  to {
+    height: 0;
+    overflow: hidden;
+    overflow: clip;
+    overflow-clip-margin: 3px;
+  }
+}
+
+/* Indicator: one-sided, so the rest state is whatever the tip already is. */
+@keyframes indicator-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+}
+
+@keyframes indicator-out {
+  to {
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+}
+
+/*
+ * Presence-hold: something Radix's Presence can wait on that changes nothing on screen. It holds
+ * `visibility: visible`, the value the surface already has, because the CSS pipeline drops a
+ * keyframe that animates only a custom property, and an animation with no keyframes never ends.
+ */
+@keyframes presence-hold {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Agent edge flow: each dash of the streak travels the route (--agent-tree-route, in px) in the
+ * first 65%, at its own --agent-tree-shift and --agent-tree-glow, then rests off the end. */
+@keyframes agent-edge-flow {
+  from {
+    stroke-dashoffset: calc(3rem - var(--agent-tree-shift));
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--agent-tree-glow);
+  }
+  65% {
+    stroke-dashoffset: calc(var(--agent-tree-route) * -1 - var(--agent-tree-shift));
+    opacity: var(--agent-tree-glow);
+  }
+  66%,
+  to {
+    stroke-dashoffset: calc(var(--agent-tree-route) * -1 - var(--agent-tree-shift));
+    opacity: 0;
+  }
+}
+
+/* Agent edge flash: the head lights as the dash reaches it, then fades. */
+@keyframes agent-edge-flash {
+  0%,
+  56% {
+    opacity: 0;
+  }
+  66% {
+    opacity: 1;
+  }
+  90%,
+  to {
+    opacity: 0;
+  }
+}
+
+/* Dash flow: four periods of a `4 6` dash pattern, so the offset loops without a seam. */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* Marquee: shift the duplicated track by half its width for a seamless horizontal loop. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Logo swap roll: outgoing rises up + blurs out; incoming rises from below into focus. Directional
+ * (absolute from→to), so the consumer just alternates the two each swap to get a clean vertical roll. */
+@keyframes logo-roll-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes logo-roll-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    filter: blur(4px);
+  }
+}
+
+/* Number roll (AnimatedNumber): outgoing glyph lifts up and out; incoming rises from below into
+ * place. Applied *per character*, staggered left → right, so a change reads as a departure-board
+ * roll rather than one block dissolving. No clip window: the layers travel on opacity so nothing
+ * slides past a hard top/bottom edge.
+ *
+ * The opacity is deliberately FRONT-LOADED against the travel: the incoming glyph is fully opaque by
+ * 45% (while it still has ground to cover) and the outgoing one is fully gone by 45% (before it has
+ * drifted far). So most of what the eye tracks is movement at full strength, not a long half-visible
+ * cross-fade, which is what makes a plain fade read as mushy. The travel (0.62em) is bigger than a
+ * fade would need for the same reason: it is only ever seen at speed. */
+@keyframes number-roll-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.62em);
+  }
+  45% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes number-roll-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  45% {
+    opacity: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.62em);
+  }
+}
+
+/* Applied by AnimatedNumber. Plain classes (not @theme utilities) so the roll takes effect without
+ * a dev restart; gated on the motion query so it's simply off under reduced-motion. Backed by the
+ * motion tokens (no raw duration/easing in the component). The outgoing layer rests at opacity 0, so
+ * if the animation never runs it stays invisible instead of overlapping the incoming value.
+ *
+ * The per-character delay is `--number-roll-stagger * n`, where the component only supplies the
+ * unitless multiplier: the step itself stays here in the token layer. */
+@media (prefers-reduced-motion: no-preference) {
+  .number-roll-in {
+    animation: number-roll-in var(--duration-base) var(--ease-out) both;
+  }
+  .number-roll-out {
+    animation: number-roll-out var(--duration-base) var(--ease-out) both;
+  }
+}
+
+/* Label swap (Button's `swapKey`): a control whose label changes with its state (Next → Done,
+ * Copy → Copied) rolls between the two instead of hard-cutting. Same departure-board motion as the
+ * number roll above, with the blur focus-pull the icon swaps use (make-interfaces #7): the outgoing
+ * label lifts up and out while the incoming one rises from below into place.
+ *
+ * The opacity is front-loaded the same way, and for the same reason: the two labels are stacked on
+ * top of each other, so a long half-visible cross-fade would read as one smeared word. The incoming
+ * label is at full strength by 45% (while it still has ground to cover) and the outgoing one is gone
+ * by 45%, which keeps the overlap short and puts movement, not dissolve, in front of the eye.
+ * Travel is 0.5em: a label is wider than a figure, so it needs less distance to read as motion. */
+@keyframes label-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5em);
+    filter: blur(4px);
+  }
+  45% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  /* Lands on `none`, not `blur(0)`: the animation fills forwards, and a retained filter would keep
+   * the label on its own composited layer, where text picks up grayscale antialiasing and reads a
+   * hair thinner than the button beside it. Both ends are visually zero blur, so nothing changes
+   * about the motion. */
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: none;
+  }
+}
+
+@keyframes label-swap-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  45% {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.5em);
+    filter: blur(4px);
+  }
+}
+
+/* Plain classes (not @theme utilities), like the number roll: they take effect without a dev
+ * restart and stay backed by the motion tokens. Gated on the motion query, so under reduced-motion
+ * the label simply swaps instantly; the outgoing layer rests at opacity 0 so that if the animation
+ * never runs it stays invisible instead of overlapping the new label. */
+@media (prefers-reduced-motion: no-preference) {
+  .label-swap-in {
+    animation: label-swap-in var(--duration-base) var(--ease-out) both;
+  }
+  .label-swap-out {
+    animation: label-swap-out var(--duration-base) var(--ease-out) both;
+  }
+}
+
+/* OrderSummary editable-row exit: a removed line collapses, fades, blurs, and drifts out; the
+ * negative margin-bottom absorbs the flex gap so the rows below glide up without a jump. Longer/softer
+ * than the enter (make-interfaces #6), sharing its opacity + blur(4px) focus-pull (#7). The consumer sets `leaving`, then drops the row from state on
+ * animationend. Under reduced-motion the collapse is instant but still fires the event, so the
+ * removal always completes. */
+@keyframes order-summary-item-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+    max-height: 4.5rem;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(0.5rem);
+    filter: blur(4px);
+    max-height: 0;
+    margin-bottom: -1.25rem;
+  }
+}
+
+.order-summary-item-leave {
+  overflow: hidden;
+  pointer-events: none;
+  animation: order-summary-item-leave var(--duration-base) var(--ease-out) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-summary-item-leave {
+    animation-duration: 1ms;
+  }
+}
+
+/* Chart load reveals. See the --animate-chart-* tokens above for how the four compose on mount. */
+@keyframes chart-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chart-area {
+  from {
+    opacity: 0;
+    /* scaleY origin sits at the plot floor (origin-bottom at the call site), so the fill grows up. */
+    transform: scaleY(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes chart-bar {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes chart-bar-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Map pin pulses: the pin's colour grows out of it and fades. See --animate-map-pin-*. */
+@keyframes map-pin-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes map-pin-alert {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/*
+ * Suggestion apply: an accepted inline edit (Suggestions) lands under a soft, category-tinted
+ * flash that settles to transparent, confirming the swap. The width tween + cross-fade are driven
+ * inline by the component (measured old → new width); this only owns the flash hue, keyed off
+ * data-variant like the festive confetti colors so the optimizer keeps the tokens and the tint
+ * mirrors each mark's underline. The component flips data-settled to ride the same transition.
+ */
+[data-slot="suggestion-applied"] [data-cell="new"] {
+  background-color: color-mix(in oklab, var(--suggestion-tint, var(--foreground)) 20%, transparent);
+}
+[data-slot="suggestion-applied"][data-settled="true"] [data-cell="new"] {
+  background-color: transparent;
+}
+[data-slot="suggestion-applied"][data-variant="default"] {
+  --suggestion-tint: var(--foreground);
+}
+[data-slot="suggestion-applied"][data-variant="grammar"] {
+  --suggestion-tint: var(--destructive);
+}
+[data-slot="suggestion-applied"][data-variant="clarity"] {
+  --suggestion-tint: var(--info);
+}
+[data-slot="suggestion-applied"][data-variant="tone"] {
+  --suggestion-tint: var(--purple);
+}
+
+/*
+ * Banner-confetti: a piece launches from its origin (left/top set inline) toward a randomized
+ * vector, tumbling and shrinking as it fades. The vars carry fallbacks so the rule stays valid for
+ * a piece that never received them. transform + opacity only, so the GPU composites the swarm.
+ */
+@keyframes banner-confetti {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cx, 0), var(--cy, 0), 0) rotate(var(--cr, 0deg)) scale(0.6);
+  }
+}
+
+/*
+ * OTP shake: a rejected code swings the digit row through a damped wobble and lets it settle.
+ *
+ * Only the *extremes* are keyframed. The in-between motion comes from the animation's own
+ * `--ease-sine` applied per segment, which is what makes this smooth: a stop every 15% would force
+ * the row through a fixed position on a fixed schedule and any timing function then fights it.
+ * Amplitude decays 1 → 0.55 → 0.25 → 0, so each swing is visibly weaker than the last and the row
+ * arrives at rest instead of being cut off mid-travel. Stops are evenly spaced (a quarter period to
+ * the first extreme, then half a period between each) because a real oscillator has a constant one.
+ *
+ * Three wide swings, not five tight ones: what reads as "harsh" in a shake is the peak velocity of
+ * the first throw, and the way to soften that is fewer oscillations over more time at a smaller
+ * amplitude, never a gentler curve on the same schedule.
+ *
+ * transform only, so the GPU composites it and the label + hint above/below never move (the error
+ * message stays readable the instant it lands). The distance carries a fallback so the rule stays
+ * valid on a row that never received the var.
+ */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  17% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * -1), 0, 0);
+  }
+  50% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * 0.55), 0, 0);
+  }
+  83% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * -0.25), 0, 0);
+  }
+}
+
+/* The same body under a second name: alternating the two re-triggers the animation from state. */
+@keyframes shake-alt {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  17% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * -1), 0, 0);
+  }
+  50% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * 0.55), 0, 0);
+  }
+  83% {
+    transform: translate3d(calc(var(--shake-distance, 3px) * -0.25), 0, 0);
+  }
+}
+
+/*
+ * Talk halo: a destructive-tinted ring that leaves the control's edge and fades as it widens. The
+ * colour mixes from the token, so it follows every theme. The spread reads `--talk-halo-spread`
+ * off the control (9px by default, 6px on PushToTalk's `sm`), so a smaller key sends a smaller ring.
+ */
+/* Blink: the Dot's recording light, 1s on and 1s off. See --animate-blink. */
+@keyframes blink {
+  0%,
+  46% {
+    opacity: 1;
+  }
+  50%,
+  96% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Live ping: a copy of the dot grows out of it and fades. See --animate-live-ping. */
+@keyframes live-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes talk-halo {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--destructive) 50%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 var(--talk-halo-spread, 9px) color-mix(in oklch, var(--destructive) 0%, transparent);
+  }
+}
+
+/* The VoiceRoster level bars (see --animate-voice-level-*): each swings between its own floor and peak. */
+@keyframes voice-level-1 {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(0.45);
+  }
+}
+
+@keyframes voice-level-2 {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes voice-level-3 {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(0.75);
+  }
+}
+
+@keyframes voice-level-4 {
+  0%,
+  100% {
+    transform: scaleY(0.2);
+  }
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+
+/* Carousel fade: in on top, while the outgoing slide holds visible and hides at the end. */
+@keyframes carousel-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes carousel-fade-out {
+  from {
+    visibility: visible;
+  }
+  to {
+    visibility: hidden;
+  }
+}
+
+/* Ken Burns: a push-in of a tenth with a drift of a couple of percent; scale/translate only. */
+@keyframes ken-burns {
+  from {
+    scale: 1.02;
+    translate: 0 0;
+  }
+  to {
+    scale: 1.12;
+    translate: var(--kb-x, 2%) var(--kb-y, -1%);
+  }
+}
+
+@keyframes carousel-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/*
+ * Toast pop: from a hair under full size; the spring timing carries it past 1 and back. `scale` is
+ * the standalone property, so it never fights the surface's own enter/exit `translate`.
+ */
+@keyframes toast-pop {
+  from {
+    scale: 0.97;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes toast-countdown {
+  from {
+    scale: 1 1;
+  }
+  to {
+    scale: 0 1;
+  }
+}
+@keyframes toast-pop-alt {
+  from {
+    scale: 0.97;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+/* Banner-pop: a brief overshoot + counter-wiggle for the icon when confetti fires. */
+@keyframes banner-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.18) rotate(-8deg);
+  }
+  70% {
+    transform: scale(0.96) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/*
+ * Hero cursors (see the --animate-cursor-* tokens). The drift holds at 20-30% and 70-80%; the press
+ * and the ripple land at 25% and 75%, dead centre of each hold, so a cursor arrives, clicks, then
+ * moves on. The waypoints are fractions of `--cursor-x` / `--cursor-y` so one loop shape scales
+ * per cursor. Each press is ~1% of the loop down and ~1.5% back (about 160ms / 240ms on a 16s
+ * loop): a real click, not a slow squeeze.
+ */
+@keyframes cursor-drift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20%,
+  30% {
+    translate: var(--cursor-x, 28px) calc(var(--cursor-y, 20px) * -1);
+  }
+  50% {
+    translate: calc(var(--cursor-x, 28px) * 0.35) var(--cursor-y, 20px);
+  }
+  70%,
+  80% {
+    translate: calc(var(--cursor-x, 28px) * -0.6) calc(var(--cursor-y, 20px) * 0.4);
+  }
+}
+
+@keyframes cursor-click {
+  0%,
+  24%,
+  26.5%,
+  74%,
+  76.5%,
+  100% {
+    scale: 1;
+  }
+  25%,
+  75% {
+    scale: 0.85;
+  }
+}
+
+/*
+ * The name-tag metronome (HeroCursor `labels`). It paints nothing: it animates an unregistered custom
+ * property, which never touches layout, paint or compositing, and exists only for its
+ * `animationiteration` events. It runs at HALF the loop and starts a quarter-loop earlier than the
+ * drift, so every iteration boundary lands on a click (25% and 75%) and the tag swaps names as the
+ * arrow bottoms out. A plain class like the label roll, gated on the motion query: under reduced
+ * motion it never runs and the tag holds its first name. A hidden cursor (display: none) runs no
+ * animations, so it never re-renders either. Custom-property keyframes still fire iteration events
+ * (verified in Chrome), which is all this needs.
+ */
+@keyframes hero-cursor-tick {
+  to {
+    --hero-cursor-tick: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-cursor-tick {
+    animation: hero-cursor-tick calc(var(--cursor-duration, 16s) / 2) linear
+      calc(var(--cursor-delay, 0s) - var(--cursor-duration, 16s) / 4) infinite;
+  }
+}
+
+/* The ripple is invisible between clicks, and resets its scale while invisible (30 → 30.01%). */
+@keyframes cursor-ping {
+  0%,
+  24.99%,
+  30.01%,
+  74.99% {
+    opacity: 0;
+    scale: 0.3;
+  }
+  25%,
+  75% {
+    opacity: 0.35;
+    scale: 0.3;
+  }
+  30%,
+  80%,
+  100% {
+    opacity: 0;
+    scale: 1.8;
+  }
+}
+
+/*
+ * Festive confetti piece colors, assigned by a stable per-piece index (data-c 0..2) rather than
+ * inline style. Two wins: the --banner-confetti-* tokens are referenced in real CSS so the optimizer
+ * keeps them (a var() set only from JS gets pruned as unused), and a piece's color never shifts as
+ * its siblings finish and unmount. The pieces themselves are spawned by the Banner's confetti burst.
+ */
+[data-slot="banner-confetti"] > [data-c="0"] {
+  background-color: var(--banner-confetti-1);
+}
+[data-slot="banner-confetti"] > [data-c="1"] {
+  background-color: var(--banner-confetti-2);
+}
+[data-slot="banner-confetti"] > [data-c="2"] {
+  background-color: var(--banner-confetti-3);
+}
+
+/*
+ * Festive Banner palette for appearance="festive". `--banner-festive-via` is the flat bar fill;
+ * `--banner-festive-to` accents the confetti (alongside `via`). Theme-independent (like --brand)
+ * and deliberately deep/saturated so white text holds AA across all four themes - the semantic hue
+ * tokens (--purple, --pink ...) lighten in dark themes and would lose contrast. Override these
+ * per-banner (a className or inline style) to theme the bar and its confetti with brand/flag colors.
+ */
+:root {
+  --banner-festive-via: oklch(0.585 0.233 277); /* indigo-500 - the flat bar fill */
+  --banner-festive-to: oklch(0.56 0.2 25); /* coral - confetti accent */
+
+  /*
+   * Festive confetti pieces. Lightened toward white so they pop against the saturated flat bar,
+   * and derived from the same --banner-festive-* stops, so overriding the palette (brand or
+   * flag colors) re-tints the confetti with it. One piece is pure white for sparkle.
+   */
+  --banner-confetti-1: white;
+  --banner-confetti-2: color-mix(in oklab, var(--banner-festive-via) 55%, white);
+  --banner-confetti-3: color-mix(in oklab, var(--banner-festive-to) 55%, white);
+}
+
+/*
+ * Generation reveal: how far down a generated picture has come in, as a percentage. A registered
+ * custom property rather than a plain one, for one reason — a registered percentage INTERPOLATES,
+ * so the mask that wipes the image in and the lit edge riding its front can both be transitioned
+ * by transitioning the variable itself. An unregistered `--x: 62%` is just a token to the engine
+ * and would jump from step to step (the model reports 12% at a time, so the front would march).
+ *
+ * It inherits, so the canvas sets it once and the picture, the front and anything else in the frame
+ * read the same number. 100% is the resting value: a frame with no generation running is simply
+ * all the way in.
+ */
+@property --generation-reveal {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+/*
+ * Halftone dot: the radius of one dot in a Generation's waiting field. Registered as a <length> so
+ * it can be animated — the field is two layers of the same dot grid (small everywhere, large in the
+ * middle) and breathing the radius makes the whole cloud swell and settle like something being
+ * worked on, rather than a static texture with an opacity pulse on it.
+ *
+ * It inherits so both layers read one number, and the keyframe below is the only thing that writes
+ * it. Symmetric easing (--ease-sine): a value that oscillates should leave and arrive with no
+ * velocity, or the loop clicks at each end.
+ */
+@property --generation-dot {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1px;
+}
+
+@keyframes generation-halftone {
+  0%,
+  100% {
+    --generation-dot: 0.7px;
+  }
+  50% {
+    --generation-dot: 1.5px;
+  }
+}
+
+/*
+ * Motion tokens: single source of truth for animation. Mirror these in lib/motion.ts
+ * for JS-driven animation. Never inline raw cubic-bezier()/durations in components.
+ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Soft spring overshoot for "settle into place" enters (e.g. the gallery/lightbox hover pill):
+   * the value passes a touch beyond its target then settles, reading as a small bounce. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Lift: a physical object being picked up or selected (a tool rising, a chip lifting). A gentle
+   * ~10% overshoot gives it weight without the bounce of --ease-spring. Never for symbols or for
+   * containers changing shape. */
+  --ease-lift: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  /* Sine: the symmetric, zero-velocity-at-both-ends curve (easeInOutSine). Reach for it when a
+   * value *oscillates* through a multi-stop keyframe rather than travelling A→B once: applied per
+   * segment it makes each swing leave one extreme and arrive at the next with no velocity, which is
+   * what a real pendulum does. `--ease-in-out` is far more aggressive (it lingers at the extremes
+   * and rushes the middle) and reads as a stutter when chained; `--ease-out` snaps into every stop. */
+  --ease-sine: cubic-bezier(0.37, 0, 0.63, 1);
+  --duration-fast: 160ms;
+  --duration-base: 300ms;
+  --duration-slow: 450ms;
+  /* Gap between neighbouring characters in the AnimatedNumber roll. Small enough that the figure
+   * still changes as one gesture, big enough that the eye reads the sweep across the digits. */
+  --number-roll-stagger: 45ms;
+  /* How long a printer takes to feed its paper out (HandheldDevicePrinter). Far past the --duration-*
+   * scale on purpose: a receipt is something you watch come out, so it travels at a motor's pace
+   * rather than a UI's. Pulling the paper back in uses --duration-slow. */
+  --duration-feed: 2500ms;
+}
+
+/* ─── Light (default) ──────────────────────────────────────────────────────── */
+/* `.light` mirrors the bare `:root` so a light surface can be scoped *inside* a
+   dark ancestor (e.g. the theme playground preview) and override the inherited
+   dark tokens. Without it, `light` = no class = inherits whatever theme wraps it. */
+:root,
+.light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  /* App canvas: the docked shell's frame. Black under every light theme (declared once here, cream
+     inherits it): a black frame around the white sheet, and the chrome on it pins itself `.dark`,
+     whose ground is this same value. Under a dark theme the frame is that theme's own ground, so
+     frame and sheet are one tone: `.dark`'s ground already is this value, and `.moonlight` rebases
+     it onto its own. `.dark` must never redeclare it, or the rail it pins would drop the page's. */
+  --canvas: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  /* Strokes and quiet fills are ink at low alpha, so they read on any ground (the page, a muted
+     band, a card) instead of fading into one close to their own grey. Each alpha lands on the
+     old solid grey over --background (--secondary/--accent 0.97, --input 0.922). --border is the
+     divider and sits BELOW --edge, the contour (docs/LIGHT-THEME-STUDY.md). --muted stays opaque:
+     it is a ground and a color-mix base (FOUNDATIONS.md, "Alpha strokes, opaque grounds"). */
+  --secondary: oklch(0.145 0 0 / 4.1%);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  /* #666, 5.7:1 on white. */
+  --muted-foreground: oklch(0.51 0 0);
+  --placeholder: oklch(0.563 0 0);
+  /* neutral-600 (#525252), 7.8:1 on white: between the ink and the meta grey. */
+  --body: oklch(0.439 0 0);
+  --accent: oklch(0.145 0 0 / 4.1%);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  /* Status hues anchor to Tailwind's named 500/sky scale so the filled status glyphs
+     (Alert/Toast/Badge icons) read bright and recognizable on light surfaces rather than muddy.
+     Warning uses amber (not pure yellow) to read clearly as caution and stay distinct from the
+     rating gold. Text usages trade a little contrast for this; they're rare and icon-accompanied. */
+  --success: oklch(0.723 0.219 149.579); /* green-500 */
+  --warning: oklch(0.769 0.188 70.08); /* amber-500 */
+  --info: oklch(0.685 0.169 237.323); /* sky-500 */
+  /* Ink on a tint (see @theme): each hue taken down to ~L 0.47 with its chroma kept, the 700 step
+     of a Tailwind ramp. Mixing with black instead greyed it into olive and mud on white and cream.
+     Amber turns toward orange as it darkens, like amber-700. */
+  --success-strong: oklch(0.5 0.14 150);
+  --warning-strong: oklch(0.5 0.13 55);
+  --info-strong: oklch(0.49 0.12 240);
+  --destructive-strong: oklch(0.5 0.19 27);
+  --purple-strong: oklch(0.45 0.2 310);
+  --pink-strong: oklch(0.47 0.19 350);
+  --teal-strong: oklch(0.42 0.1 192);
+  --orange-strong: oklch(0.48 0.15 45);
+  /* Solid fills that hold white ink at AA. Green, sky and red are too light at their base, so
+     they step down; amber stays bright and takes dark ink instead. */
+  --success-solid: oklch(0.53 0.15 150);
+  --warning-solid: var(--warning);
+  --info-solid: oklch(0.55 0.14 240);
+  --destructive-solid: oklch(0.53 0.21 27);
+  --purple-solid: var(--purple);
+  --pink-solid: var(--pink);
+  --teal-solid: var(--teal);
+  --orange-solid: var(--orange);
+  /* Hyperlink color: the text color. The accent only colors buttons and focus rings, so a link
+     reads as a link by its underline, not by a hue. */
+  --link: var(--foreground);
+  --purple: oklch(0.52 0.22 310);
+  --pink: oklch(0.54 0.21 350);
+  --teal: oklch(0.5 0.15 192);
+  --orange: oklch(0.56 0.18 45);
+  /* Rating fills (theme-agnostic, like --brand: defined once, inherited by dark/moonlight). A
+     saturated gold star and a love-red heart read clearly on light AND dark surfaces, so they
+     are NOT redefined per theme. Brighter than --warning by design (see @theme note above). */
+  --rating: oklch(0.8 0.17 82);
+  --rating-red: oklch(0.64 0.22 25);
+  /* Chat sent-bubble blue: fixed blue-600, defined once and inherited by every theme (see
+     --rating/--brand). A saturated mid-blue that holds white text at AA on light and dark. */
+  --chat-sent: oklch(0.55 0.21 262); /* ~blue-600 (#2563EB) */
+  /* Phosphor inks (see @theme): theme-agnostic like --rating, defined once and inherited by every
+     theme. Each sits inside sRGB (the hex it stands for is noted), so an old engine that needs a
+     converted fallback gets exactly the same glow. */
+  --phosphor: oklch(0.8714 0.286 141.53); /* #39ff14, phosphor green */
+  --phosphor-yellow: oklch(0.8606 0.1731 91.94); /* #facc15, yellow-400 */
+  --phosphor-orange: oklch(0.7576 0.159 55.93); /* #fb923c, orange-400 */
+  --phosphor-red: oklch(0.6553 0.2309 26.4); /* #ff3b3b */
+  --syntax-keyword: oklch(0.52 0.24 295);
+  --syntax-string: oklch(0.52 0.17 150);
+  --syntax-comment: oklch(0.6 0.03 260);
+  --syntax-function: oklch(0.52 0.21 262);
+  --syntax-number: oklch(0.58 0.18 50);
+  --syntax-tag: oklch(0.56 0.22 25);
+  --syntax-attribute: oklch(0.54 0.14 205);
+  --syntax-punctuation: oklch(0.5 0.04 260);
+  /* Divider: rows, a footer's rule, a stats strip. Lighter than the contour it sits inside. */
+  --border: oklch(0.145 0 0 / 6%);
+  /* Soft stroke for large floating surfaces (Popover, Dialog, Sheet, Drawer). */
+  --border-soft: oklch(0.145 0 0 / 5.3%);
+  /* Contour of an in-flow container, carried together with the shadow-xs lift. */
+  --edge: oklch(0.145 0 0 / 8%);
+  /* Control stroke: fields and outline controls, the WCAG 1.4.11 boundary. */
+  --input: oklch(0.145 0 0 / 10.6%);
+  /* --ring: the neutral edge a control takes on hover (`hover:border-ring/50`). Not a focus color:
+   * keyboard focus rings are `ring-brand` (docs/FOUNDATIONS.md, "Focus rings"). */
+  --ring: oklch(0.708 0 0);
+  /*
+   * Accent: the single knob. This is the DEFAULT accent (#F84416, "orange"); switch the
+   * whole accent palette by setting `data-accent="…"` on <html> (see "Accent presets" below).
+   * Themes (dark/moonlight) deliberately DON'T redefine --brand, so accent and theme
+   * are orthogonal axes: any accent works under any of the four themes.
+   */
+  --brand: oklch(0.648 0.222 34.2);
+  /* Field focus halo derives from the accent, stronger on dark themes. Set --brand, get this free. */
+  --ring-brand: color-mix(in oklch, var(--brand) 16%, transparent);
+  --ring-destructive: color-mix(in oklch, var(--destructive) 20%, transparent);
+  /* Brand ink: the accent pulled toward black, for brand-colored TEXT on a light page ground (a
+     tinted vote chip, syntax highlighting). Contrast is symmetric, so a raw --brand label on white
+     is the same 3.6:1 as white on the brand fill; this step clears 4.5:1 on white for all eight
+     accent presets (amber, the binding case, at 5.26:1; orange #ac2c0b at 6.73:1). NOT for the
+     white onMedia chip on a bg-brand band: that label is near-black, never a brand color.
+     Theme-agnostic like --brand, so no theme redefines it. */
+  --brand-strong: color-mix(in oklch, var(--brand), black 24%);
+  /* Brand foreground: the ink that sits ON a brand fill (a primary Button label, a Radio dot, a
+     selected day, a brand Banner). White for every mid-lightness accent; a light accent (lime)
+     swaps in a dark ink from its preset. Theme-agnostic like --brand. On `bg-brand`, write
+     `text-brand-foreground`, never `text-white`, or a light accent loses its labels. The one
+     exception is the Checkbox / Checklist tick, drawn in its `--surface` (docs/FOUNDATIONS.md). */
+  --brand-foreground: oklch(1 0 0);
+  /* The single radius knob. 1rem (16px) anchors the lg step; the quarter-step scale above
+     keeps every rounded-* utility on the 4px grid as this value re-rounds the whole system. */
+  --radius: 1rem;
+  /* Two layers: a tight contact line and a soft ambient falloff. */
+  --shadow-xs: 0 1px 1px oklch(0 0 0 / 0.04), 0 2px 4px -1px oklch(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.1), 0 1px 2px -1px oklch(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1), 0 8px 10px -6px oklch(0 0 0 / 0.1);
+}
+
+
+/* ─── Cream ────────────────────────────────────────────────────────────────── */
+/*
+ * Cream: Koala's warm light theme, the daylight counterpart to moonlight. It is a LIGHT theme, so
+ * it deliberately overrides only the neutral surface ladder and its strokes. The status hues, link
+ * blue, categorical hues and syntax colors are already tuned for a light ground and stay inherited
+ * from `:root`. That is also why cream is absent from the `dark` custom variant at the top of this
+ * file: `dark:` utilities must NOT fire under it.
+ *
+ * The ladder inverts one relationship from `light`. There, `--background` and `--card` are both
+ * pure white. Here the page is toned paper and cards lift ABOVE it, which is what makes the theme
+ * read as warm rather than as dirty white.
+ * `--popover` sits with the cards, above the page, which is the relationship Toast already assumes
+ * for this theme (see components/ui/toast/toast.tsx).
+ *
+ * PLACEHOLDER values approximating the public site, like moonlight above; replace with the exact
+ * Figma "Cream" variable export. Hue ≈ 85 (warm yellow) with chroma held under 0.02, so it reads
+ * as paper rather than as beige.
+ */
+.cream {
+  --background: oklch(0.982 0.009 85);
+  --foreground: oklch(0.185 0.012 75);
+  /* Cards lift above the toned page instead of matching it, so a card reads without leaning on
+     its border, exactly as it does in the dark themes. */
+  --card: oklch(0.997 0.004 85);
+  --card-foreground: oklch(0.185 0.012 75);
+  --popover: oklch(0.997 0.004 85);
+  --popover-foreground: oklch(0.185 0.012 75);
+  --primary: oklch(0.24 0.014 75);
+  --primary-foreground: oklch(0.982 0.009 85);
+  /* Warm ink at low alpha, as in light: over the cream page these land on the old solid steps
+     (0.952 fills, 0.898 strokes), and they darken a lifted card by the same amount. */
+  --secondary: oklch(0.35 0.07 78 / 5.4%);
+  --secondary-foreground: oklch(0.24 0.014 75);
+  --muted: oklch(0.952 0.015 85);
+  --muted-foreground: oklch(0.485 0.019 75);
+  --placeholder: oklch(0.55 0.017 75);
+  --body: oklch(0.43 0.017 75);
+  --accent: oklch(0.35 0.07 78 / 5.4%);
+  --accent-foreground: oklch(0.24 0.014 75);
+  /* Same ladder as light, scaled to the warm ink: divider below contour, controls strongest. */
+  --border: oklch(0.35 0.07 78 / 8.1%);
+  --border-soft: oklch(0.35 0.07 78 / 7.2%);
+  --edge: oklch(0.35 0.07 78 / 10.8%);
+  --input: oklch(0.35 0.07 78 / 14.3%);
+  --ring: oklch(0.715 0.02 85);
+  /* Warm the shadow ink too: neutral black cast over a toned ground reads grey and muddies it. */
+  --shadow-xs: 0 1px 1px oklch(0.25 0.03 70 / 0.05), 0 2px 4px -1px oklch(0.25 0.03 70 / 0.06);
+  --shadow-sm: 0 1px 3px oklch(0.25 0.03 70 / 0.11), 0 1px 2px -1px oklch(0.25 0.03 70 / 0.11);
+  --shadow-md: 0 4px 6px -1px oklch(0.25 0.03 70 / 0.11), 0 2px 4px -2px oklch(0.25 0.03 70 / 0.11);
+  --shadow-lg: 0 10px 15px -3px oklch(0.25 0.03 70 / 0.11), 0 4px 6px -4px oklch(0.25 0.03 70 / 0.11);
+  --shadow-xl: 0 20px 25px -5px oklch(0.25 0.03 70 / 0.11), 0 8px 10px -6px oklch(0.25 0.03 70 / 0.11);
+}
+
+/* ─── Dark ─────────────────────────────────────────────────────────────────── */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --placeholder: oklch(0.58 0 0);
+  --body: oklch(0.83 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.8 0.17 155);
+  --warning: oklch(0.84 0.15 85);
+  --info: oklch(0.78 0.14 245);
+  /* Soft-badge text equals the base hue on dark surfaces: already bright enough to read (see :root). */
+  --success-strong: var(--success);
+  --warning-strong: var(--warning);
+  --info-strong: var(--info);
+  --destructive-strong: var(--destructive);
+  --purple-strong: var(--purple);
+  --pink-strong: var(--pink);
+  --teal-strong: var(--teal);
+  --orange-strong: var(--orange);
+  --success-solid: var(--success);
+  --warning-solid: var(--warning);
+  --info-solid: var(--info);
+  --destructive-solid: var(--destructive);
+  --purple-solid: var(--purple);
+  --pink-solid: var(--pink);
+  --teal-solid: var(--teal);
+  --orange-solid: var(--orange);
+  --link: var(--foreground);
+  --purple: oklch(0.78 0.16 310);
+  --pink: oklch(0.8 0.17 350);
+  --teal: oklch(0.78 0.13 192);
+  --orange: oklch(0.83 0.15 50);
+  --syntax-keyword: oklch(0.8 0.17 300);
+  --syntax-string: oklch(0.82 0.16 150);
+  --syntax-comment: oklch(0.6 0.03 260);
+  --syntax-function: oklch(0.8 0.15 258);
+  --syntax-number: oklch(0.83 0.15 60);
+  --syntax-tag: oklch(0.8 0.16 22);
+  --syntax-attribute: oklch(0.82 0.13 205);
+  --syntax-punctuation: oklch(0.72 0.04 260);
+  --border: oklch(1 0 0 / 10%);
+  --border-soft: color-mix(in oklch, var(--border) 50%, transparent);
+  --edge: var(--border);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  /* --brand is theme-agnostic. The halo is not: a faint mix of the accent over a near-black ground
+     reads as grey beside the brand border, so a dark theme mixes it stronger to keep one hue. */
+  --ring-brand: color-mix(in oklch, var(--brand) 30%, transparent);
+  --ring-destructive: color-mix(in oklch, var(--destructive) 35%, transparent);
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.35), 0 1px 2px -1px oklch(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.4), 0 2px 4px -2px oklch(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.4), 0 4px 6px -4px oklch(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.45), 0 8px 10px -6px oklch(0 0 0 / 0.3);
+}
+
+/*
+ * Moonlight: Koala's blue-tinted dark theme. PLACEHOLDER values approximating the public
+ * site; replace with exact Figma "Moonlight" variable export. Hue ≈ 265 (blue).
+ *
+ * `.moonlight .dark`: the docked chrome (Layout sidebar/topbar/rail, StatusBar) pins `.dark` so
+ * it stays black under the LIGHT themes. Under moonlight that pin re-declared the neutral dark
+ * tokens and the chrome's hover/active fills (--accent), borders and greys turned grey-black on
+ * a blue page. Under a dark theme the pin must keep the page's own palette.
+ */
+.moonlight,
+.moonlight .dark {
+  --background: oklch(0.15 0.022 265);
+  /* The docked frame is the ground in a dark theme (see `--canvas` under :root). */
+  --canvas: var(--background);
+  --foreground: oklch(0.97 0.006 265);
+  --card: oklch(0.21 0.024 265);
+  --card-foreground: oklch(0.97 0.006 265);
+  --popover: oklch(0.21 0.024 265);
+  --popover-foreground: oklch(0.97 0.006 265);
+  --primary: oklch(0.704 0.14 264);
+  --primary-foreground: oklch(0.15 0.022 265);
+  --secondary: oklch(0.27 0.026 265);
+  --secondary-foreground: oklch(0.97 0.006 265);
+  --muted: oklch(0.27 0.026 265);
+  --muted-foreground: oklch(0.71 0.022 265);
+  --placeholder: oklch(0.58 0.02 265);
+  --body: oklch(0.83 0.018 265);
+  --accent: oklch(0.285 0.028 265);
+  --accent-foreground: oklch(0.97 0.006 265);
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.8 0.16 158);
+  --warning: oklch(0.84 0.14 88);
+  --info: oklch(0.8 0.15 248);
+  /* Soft-badge text equals the base hue on dark surfaces: already bright enough to read (see :root). */
+  --success-strong: var(--success);
+  --warning-strong: var(--warning);
+  --info-strong: var(--info);
+  --destructive-strong: var(--destructive);
+  --purple-strong: var(--purple);
+  --pink-strong: var(--pink);
+  --teal-strong: var(--teal);
+  --orange-strong: var(--orange);
+  --success-solid: var(--success);
+  --warning-solid: var(--warning);
+  --info-solid: var(--info);
+  --destructive-solid: var(--destructive);
+  --purple-solid: var(--purple);
+  --pink-solid: var(--pink);
+  --teal-solid: var(--teal);
+  --orange-solid: var(--orange);
+  --link: var(--foreground);
+  --purple: oklch(0.78 0.17 308);
+  --pink: oklch(0.8 0.18 348);
+  --teal: oklch(0.78 0.14 190);
+  --orange: oklch(0.83 0.16 50);
+  --syntax-keyword: oklch(0.82 0.17 300);
+  --syntax-string: oklch(0.83 0.16 158);
+  --syntax-comment: oklch(0.62 0.045 265);
+  --syntax-function: oklch(0.82 0.15 258);
+  --syntax-number: oklch(0.84 0.15 65);
+  --syntax-tag: oklch(0.82 0.16 22);
+  --syntax-attribute: oklch(0.83 0.13 205);
+  --syntax-punctuation: oklch(0.74 0.045 265);
+  --border: oklch(0.85 0.03 265 / 12%);
+  --border-soft: color-mix(in oklch, var(--border) 50%, transparent);
+  --edge: var(--border);
+  --input: oklch(0.85 0.03 265 / 16%);
+  --ring: oklch(0.55 0.07 264);
+  /* --brand is theme-agnostic. The halo is not: a faint mix of the accent over a near-black ground
+     reads as grey beside the brand border, so a dark theme mixes it stronger to keep one hue. */
+  --ring-brand: color-mix(in oklch, var(--brand) 30%, transparent);
+  --ring-destructive: color-mix(in oklch, var(--destructive) 35%, transparent);
+  --shadow-xs: 0 1px 2px oklch(0.1 0.04 265 / 0.35);
+  --shadow-sm: 0 1px 3px oklch(0.1 0.04 265 / 0.45), 0 1px 2px -1px oklch(0.1 0.04 265 / 0.35);
+  --shadow-md: 0 4px 6px -1px oklch(0.1 0.04 265 / 0.5), 0 2px 4px -2px oklch(0.1 0.04 265 / 0.4);
+  --shadow-lg: 0 10px 15px -3px oklch(0.1 0.04 265 / 0.5), 0 4px 6px -4px oklch(0.1 0.04 265 / 0.4);
+  --shadow-xl: 0 20px 25px -5px oklch(0.1 0.04 265 / 0.55), 0 8px 10px -6px oklch(0.1 0.04 265 / 0.35);
+}
+
+/* ─── Chart: data palette ────────────────────────────────────────────────────────
+ * Validated with the dataviz six-checks validator against each theme's card surface. The order
+ * leads with blue → green (the house pairing for two-series examples), then pink, orange, sky,
+ * purple, amber, teal. Every prefix (n = 3, 5, 8) passes lightness band, chroma floor,
+ * normal-vision floor, 3:1 contrast and adjacent CVD ΔE ≥ 8 (dark purple ↔ sky sits right at
+ * 8.0). Green carries the same chroma as its neighbours so blue + green read as equals; a muted
+ * green looked olive beside the blue on dark grounds. Order is fixed and never cycled:
+ * a 9th series folds into "Other". All-pairs separation holds for the first THREE slots only, so
+ * scatter/bubble charts cap at three groups. Cream inherits the light values, moonlight shares
+ * the dark ones.
+ *
+ * Sequential: one hue, light → dark on light grounds and flipped on dark ones (seq-1 always sits
+ * nearest the surface = lowest magnitude). An ORDINAL reading (stacked tiers) starts at seq-3 in
+ * light and seq-2 in dark so the faintest step still clears 2:1.
+ * Diverging: blue pole ↔ red pole with a hueless midpoint (div-4). Status: good / warning /
+ * serious / critical. Warning and serious sit under 3:1 on light grounds by design, so they
+ * always ship with an icon + label, never colour alone.
+ */
+:root,
+.light {
+  --chart-1: oklch(0.58 0.22 260); /* blue */
+  --chart-2: oklch(0.57 0.17 150); /* green */
+  --chart-3: oklch(0.52 0.205 352); /* pink */
+  --chart-4: oklch(0.67 0.185 45); /* orange */
+  --chart-5: oklch(0.64 0.135 237); /* sky */
+  --chart-6: oklch(0.52 0.22 305); /* purple */
+  --chart-7: oklch(0.67 0.135 75); /* amber */
+  --chart-8: oklch(0.625 0.11 175); /* teal */
+  --chart-seq-1: oklch(0.93 0.032 260);
+  --chart-seq-2: oklch(0.84 0.077 260);
+  --chart-seq-3: oklch(0.75 0.124 260);
+  --chart-seq-4: oklch(0.66 0.175 260);
+  --chart-seq-5: oklch(0.57 0.2 260);
+  --chart-seq-6: oklch(0.48 0.189 260);
+  --chart-seq-7: oklch(0.39 0.154 260);
+  --chart-div-1: oklch(0.45 0.178 260);
+  --chart-div-2: oklch(0.61 0.2 260);
+  --chart-div-3: oklch(0.77 0.113 260);
+  --chart-div-4: oklch(0.93 0 0);
+  --chart-div-5: oklch(0.77 0.131 27);
+  --chart-div-6: oklch(0.61 0.2 27);
+  --chart-div-7: oklch(0.45 0.177 27);
+  --chart-good: oklch(0.64 0.18 148);
+  --chart-warning: oklch(0.8 0.16 78);
+  --chart-serious: oklch(0.78 0.13 42);
+  --chart-critical: var(--destructive);
+}
+
+.dark,
+.moonlight,
+.moonlight .dark {
+  --chart-1: oklch(0.56 0.22 260);
+  --chart-2: oklch(0.64 0.17 152);
+  --chart-3: oklch(0.56 0.22 352);
+  --chart-4: oklch(0.65 0.18 45);
+  --chart-5: oklch(0.56 0.115 237);
+  --chart-6: oklch(0.56 0.22 305);
+  --chart-7: oklch(0.65 0.13 80);
+  --chart-8: oklch(0.605 0.11 175);
+  --chart-seq-1: oklch(0.33 0.13 260);
+  --chart-seq-2: oklch(0.42 0.166 260);
+  --chart-seq-3: oklch(0.5 0.197 260);
+  --chart-seq-4: oklch(0.58 0.2 260);
+  --chart-seq-5: oklch(0.66 0.175 260);
+  --chart-seq-6: oklch(0.74 0.13 260);
+  --chart-seq-7: oklch(0.82 0.087 260);
+  --chart-div-1: oklch(0.79 0.103 260);
+  --chart-div-2: oklch(0.64 0.187 260);
+  --chart-div-3: oklch(0.49 0.193 260);
+  --chart-div-4: oklch(0.33 0 0);
+  --chart-div-5: oklch(0.49 0.193 27);
+  --chart-div-6: oklch(0.64 0.2 27);
+  --chart-div-7: oklch(0.79 0.117 27);
+  --chart-good: var(--success);
+  --chart-warning: var(--warning);
+  --chart-serious: oklch(0.78 0.145 55);
+  --chart-critical: var(--destructive);
+}
+
+/* ─── Map: the basemap's palette ─────────────────────────────────────────────────
+ * The Map component paints its vector basemap from these roles (components/ui/map/map-style.ts
+ * reads them off the map element and re-reads them when the theme changes). Every role mixes the
+ * theme's own tokens, so a map is light, cream, dark or moonlight with the page and needs no
+ * per-theme hex. Declared on the map element, not :root, so they resolve against the NEAREST theme
+ * scope, and so one map can be re-tinted with a utility (`[--map-water:…]`).
+ *
+ * Light grounds: grey land under white streets, the way a printed city map reads. Dark grounds
+ * flip it: near-black land under streets that brighten with their rank. Water takes a little of
+ * `--info`, parks a little of `--success`; nothing else carries a hue, so whatever an app draws on
+ * top owns the colour.
+ *
+ * The roles live in `@layer base` so a utility on one map wins: unlayered, they beat every utility
+ * (layered CSS always loses to unlayered), and the dark block out-ranked even a plain class.
+ * MapLibre's chrome below stays unlayered, since maplibre-gl.css is unlayered and must lose to it.
+ *
+ * The neutral roles (ink into ground) mix in oklab: cream's near-neutral ink and ground came out of
+ * an oklch mix with a `none` hue, which paints as 0°, and the cream map's land turned pink. The
+ * tinted ones (water, parks) stay in oklch, which keeps the hue of `--info` and `--success` vivid.
+ * ──────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  /* Button shape follows the domain. Application UI (the default) gives a labelled button the
+     field corner of its size; a marketing surface sets --button-radius to the pill. The nearest
+     scope wins, so an app screen shown inside a landing page (a Layout) resets it. */
+  :where(
+      [data-domain="marketing"],
+      [data-slot="section"],
+      [data-slot="hero"],
+      [data-slot="navbar"],
+      [data-slot="footer"],
+      [data-slot="banner"],
+      [data-slot="gallery"]
+    ) {
+    --button-radius: var(--radius-pill);
+  }
+  :where([data-domain="application"], [data-slot="layout"]) {
+    --button-radius: initial;
+  }
+
+  [data-slot="map"] {
+    --map-land: color-mix(in oklab, var(--foreground) 4%, var(--background));
+    --map-landuse: color-mix(in oklab, var(--foreground) 6%, var(--background));
+    --map-park: color-mix(in oklch, var(--success) 14%, var(--map-land));
+    --map-water: color-mix(in oklch, var(--info) 15%, var(--background));
+    --map-building: color-mix(in oklab, var(--foreground) 10%, var(--background));
+    --map-road: var(--background);
+    --map-road-major: var(--background);
+    --map-road-motorway: color-mix(in oklab, var(--foreground) 3%, var(--background));
+    --map-road-casing: color-mix(in oklab, var(--foreground) 16%, var(--background));
+    --map-rail: color-mix(in oklab, var(--foreground) 24%, var(--background));
+    --map-boundary: color-mix(in oklab, var(--foreground) 30%, var(--background));
+    --map-label: var(--muted-foreground);
+    --map-label-strong: var(--foreground);
+    --map-label-water: color-mix(in oklch, var(--info) 60%, var(--foreground));
+    --map-halo: var(--map-land);
+
+    @variant dark {
+      --map-land: color-mix(in oklab, var(--foreground) 2%, var(--background));
+      --map-landuse: color-mix(in oklab, var(--foreground) 4%, var(--background));
+      --map-park: color-mix(in oklch, var(--success) 9%, var(--map-land));
+      --map-water: color-mix(in oklch, var(--info) 12%, var(--background));
+      --map-building: color-mix(in oklab, var(--foreground) 9%, var(--background));
+      --map-road: color-mix(in oklab, var(--foreground) 12%, var(--background));
+      --map-road-major: color-mix(in oklab, var(--foreground) 19%, var(--background));
+      --map-road-motorway: color-mix(in oklab, var(--foreground) 27%, var(--background));
+      --map-road-casing: var(--background);
+      --map-rail: color-mix(in oklab, var(--foreground) 18%, var(--background));
+      --map-label-water: color-mix(in oklch, var(--info) 55%, var(--background));
+    }
+  }
+}
+
+[data-slot="map"] {
+  /* MapLibre's own chrome, on Koala's type and tokens. */
+  & .maplibregl-map {
+    font: inherit;
+  }
+  & .maplibregl-canvas {
+    outline: none;
+  }
+  & .maplibregl-canvas:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
+  }
+  /* Doubled classes to beat MapLibre's own `.maplibregl-ctrl.maplibregl-ctrl-attrib` white box. */
+  & .maplibregl-ctrl.maplibregl-ctrl-attrib,
+  & .maplibregl-ctrl-attrib.maplibregl-compact {
+    background: color-mix(in oklch, var(--background) 85%, transparent);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+  }
+  & .maplibregl-ctrl-attrib a {
+    color: inherit;
+  }
+  /* The (i) glyph is a black data-URI; on a dark ground it turns white. */
+  @variant dark {
+    & .maplibregl-ctrl-attrib-button {
+      filter: invert(1);
+    }
+  }
+}
+
+/* ─── Notebook: the paper's printed marks ───────────────────────────────────────
+ * NotebookPage and NotebookBinding (components/ui/notebook-page) take these few marks a school
+ * notebook has and the semantic roles don't: the red ruled margin, and the spiral's metal rings
+ * with the shade the binding throws on the sheet. Each one mixes the theme's own tokens, so a
+ * notebook is light, cream, dark or moonlight with the page. Declared on the parts, not :root, so
+ * they resolve against the NEAREST theme (a `.cream` card inside a dark page gets cream rings).
+ *
+ *   --notebook-margin           the margin rule: the error red at under half strength, the way a
+ *                               printed red line reads next to the ink.
+ *   --notebook-binding-shade    the top of the binding strip, fading to the sheet below it.
+ *   --notebook-ring             a ring of the spiral: near the ink, a touch softer.
+ *   --notebook-ring-highlight   the light catching the top of a ring.
+ *   --notebook-ring-shadow      the ring's drop onto the paper.
+ * ──────────────────────────────────────────────────────────────────────────── */
+[data-slot="notebook-page"] {
+  --notebook-margin: color-mix(in oklch, var(--destructive) 45%, transparent);
+}
+
+[data-slot="notebook-binding"] {
+  --notebook-binding-shade: color-mix(in oklch, var(--foreground) 14%, transparent);
+  --notebook-ring: color-mix(in oklch, var(--foreground) 82%, var(--background));
+  --notebook-ring-highlight: color-mix(in oklch, var(--background) 22%, transparent);
+  --notebook-ring-shadow: color-mix(in oklch, var(--foreground) 45%, transparent);
+}
+
+/* koala:site-only - everything up to the matching end marker belongs to this site, not the
+   system: scripts/build-registry.mjs strips it from the koala.css that `koalaui init` installs. */
+/* ─── Trace palette: the Webflow site's colors, made themeable ────────────────
+ * The pages still traced from koalaui.com (components/site/*, via SitePage) were transcribed
+ * against Webflow's stylesheet, not Koala's tokens. They read their neutrals through these roles
+ * (`text-trace-heading`, `border-trace-stroke`…) so they can follow the visitor's theme:
+ *  - light keeps the exact Webflow values, so the trace stays faithful to the live site;
+ *  - cream, dark and moonlight hand each role to the Koala token that plays it, so a traced page
+ *    sits on the same ground as the DS frame around it (navbar, footer) in every theme.
+ * Declared per theme scope (not once on :root) so a `.light` island inside a dark page resolves
+ * its own values, like every other token. Saturated accents (the Webflow orange, the partner
+ * logos) are left as they are: they read on both grounds.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* The light values, as a utility so a block can opt back into them under a variant: copy that
+ * sits on a photo which is always light (`min-[992px]:trace-light` where the photo only shows on
+ * desktop). The light scopes below apply the same utility, so the hex values live once. */
+@utility trace-light {
+  --trace-ground: #fff; /* body, section and card fill */
+  --trace-heading: #1a1a1a; /* titles, strong labels */
+  --trace-ink: #434343; /* reading copy */
+  --trace-muted: #767676; /* meta, icons, placeholders, hover underlines */
+  --trace-stroke: #d6d6d6; /* card and control borders, rules */
+  --trace-stroke-strong: #a5a5a5; /* a border under the pointer */
+  --trace-hairline: #e5e5e5; /* section rules, image frames */
+  --trace-wash: #f5f5f5; /* a quiet grey panel, a selected tab */
+  --trace-wash-warm: #f1f0ee; /* the warm panel behind cards and CTAs */
+  --trace-wash-strong: #e7e7e7; /* image placeholders, hover on a panel */
+  --trace-focus: #ffded5; /* the peach focus halo of a field */
+}
+
+:root,
+.light {
+  @apply trace-light;
+}
+
+.cream,
+.dark,
+.moonlight {
+  --trace-ground: var(--background);
+  --trace-heading: var(--foreground);
+  --trace-ink: var(--body);
+  --trace-muted: var(--muted-foreground);
+  --trace-stroke: var(--input);
+  --trace-stroke-strong: color-mix(in oklab, var(--foreground) 32%, transparent);
+  --trace-hairline: var(--border);
+  --trace-wash: var(--muted);
+  --trace-wash-warm: var(--muted);
+  --trace-wash-strong: var(--accent);
+  --trace-focus: color-mix(in oklab, var(--brand) 28%, transparent);
+}
+/* koala:end-site-only */
+
+/* ─── Accent presets ("color modes") ─────────────────────────────────────────
+ * The accent is a single knob: a preset sets --brand, and --ring-brand, --brand-strong and
+ * --link derive from it (see :root), and every component reads the accent through
+ * `bg-brand` / `border-brand` / `ring-brand` / `--ring-brand`, so one variable
+ * recolors the whole system. Apply by setting `data-accent="<name>"` on <html>
+ * (the AccentProvider does this and persists the choice). The first eight are tuned to one
+ * vivid, accessible lightness (~L 0.6) so each reads well on light AND dark surfaces and holds
+ * white text on its fill.
+ *
+ * Lime is the one LIGHT accent, so it is the one preset that follows the theme. On the light
+ * themes it is lime-600, deep enough to hold as text on white (3.1:1, the ground the default
+ * orange stands on at 3.6:1), so every `text-brand` in the system still reads and --brand-strong
+ * keeps deriving; on the dark themes it is the vivid lime-400. Its fill always carries lime-950
+ * (--brand-foreground), never white, and its link is pulled to 25% black (~5:1 on white).
+ * To add an accent: append a preset here and a name to ACCENTS in components/accent-provider.tsx.
+ * ──────────────────────────────────────────────────────────────────────────── */
+[data-accent="orange"] { --brand: oklch(0.648 0.222 34.2); } /* #F84416, default */
+[data-accent="red"]    { --brand: oklch(0.585 0.222 27); }
+[data-accent="amber"]  { --brand: oklch(0.705 0.165 70); }
+[data-accent="green"]  { --brand: oklch(0.62 0.17 150); }
+[data-accent="teal"]   { --brand: oklch(0.6 0.13 192); }
+[data-accent="blue"]   { --brand: oklch(0.55 0.2 255); }
+[data-accent="violet"] { --brand: oklch(0.52 0.23 285); }
+[data-accent="pink"]   { --brand: oklch(0.59 0.23 354); }
+[data-accent="lime"] {
+  --brand: oklch(0.648 0.2 131.684); /* lime-600, #65A30D: the light themes */
+  --brand-foreground: oklch(0.274 0.072 132.109); /* lime-950 */
+}
+/* The dark themes: on the page, on any nested dark band, and on a swatch that sets its own
+   accent inside a dark page. */
+[data-accent="lime"]:is(.dark, .moonlight),
+[data-accent="lime"] :is(.dark, .moonlight),
+:is(.dark, .moonlight) [data-accent="lime"] {
+  --brand: oklch(0.841 0.238 128.85); /* lime-400, #A3E635 */
+}
+/* White is the monochrome accent, so it also follows the theme: near-white on the dark themes,
+ * where it carries a near-black ink, and near-black on the light ones, where white would vanish
+ * into the page. */
+[data-accent="white"] {
+  --brand: oklch(0.205 0 0); /* neutral-900: the light themes */
+  --brand-foreground: oklch(0.985 0 0);
+}
+[data-accent="white"]:is(.dark, .moonlight),
+[data-accent="white"] :is(.dark, .moonlight),
+:is(.dark, .moonlight) [data-accent="white"] {
+  --brand: oklch(0.97 0 0); /* neutral-100 */
+  --brand-foreground: oklch(0.205 0 0);
+}
+
+/* ─── Touch: the floor surface ────────────────────────────────────────────────
+ * `<DensityProvider density="touch">` is the density of a till, a kitchen screen or a kiosk:
+ * hands in a hurry, gloves, a screen read from a step away. It is a SURFACE density, not an
+ * instance one: components read it as `comfortable` spacing (useDensity) and the scope below
+ * retunes the shared ladders, so every control that resolves `h-control-*` and every `text-xs`
+ * / `text-sm` grows with no per-component prop. 48px is the smallest control (sm, the app
+ * default; xs is floored to sm), 64px (lg) is the primary action of a screen.
+ * ──────────────────────────────────────────────────────────────────────────── */
+[data-density="touch"] {
+  --spacing-control-sm: 3rem;
+  --spacing-control-md: 3.5rem;
+  --spacing-control-lg: 4rem;
+  --spacing-control-xl: 4.5rem;
+  --text-xs: 0.875rem;
+  --text-xs--line-height: calc(1.25 / 0.875);
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.5;
+}
+
+/* ─── High contrast: any theme, under strong light ────────────────────────────
+ * `data-contrast="high"` on the root (or any subtree) is an axis of its own beside theme and accent:
+ * a kitchen under fluorescent tubes, a terrace at noon, a greasy screen. Theme-agnostic, it
+ * pulls each theme's secondary inks and lines toward that theme's own foreground, so cream stays
+ * warm and moonlight stays blue. Re-declared on every theme root below it, so a pinned dark band
+ * resolves against its own ink. */
+[data-contrast="high"],
+[data-contrast="high"] :is(.light, .cream, .dark, .moonlight) {
+  --body: var(--foreground);
+  --muted-foreground: color-mix(in oklch, var(--foreground) 84%, var(--background));
+  --placeholder: var(--muted-foreground);
+  --border: color-mix(in oklch, var(--foreground) 24%, transparent);
+  --input: color-mix(in oklch, var(--foreground) 42%, transparent);
+  --ring: var(--foreground);
+  --hairline: 1px;
+}
+
+
+/* ─── Ring: the canonical accent halo ─────────────────────────────────────────
+ * One definition for the soft ring shared across the system instead of repeating the
+ * box-shadow at every call site: form controls on focus (Input/Textarea/Select/OTP/
+ * Date Picker/Input Group/editors) and the featured Pricing tier. A 3px halo hugging
+ * the border with NO gap (not a ring-offset), derived from the accent tokens, so it
+ * re-themes and re-accents for free:
+ *   - `brand-ring`       : the accent at 16%, 30% on dark themes (--ring-brand). The default focus/emphasis ring.
+ *   - `destructive-ring` : the error counterpart (--ring-destructive), for invalid controls.
+ * Each is a single `box-shadow`, so don't pair it with a Tailwind `shadow-*` on the SAME
+ * element (both write box-shadow); keep them in mutually exclusive states. The two are a
+ * conflict group in lib/utils.ts, so the error ring still overrides the brand ring via
+ * tailwind-merge. Apply on whatever state owns the ring (`focus-within:brand-ring`,
+ * `data-[state=open]:brand-ring`, or always-on for an emphasized surface). */
+@utility brand-ring {
+  box-shadow: 0 0 0 3px var(--ring-brand);
+}
+@utility destructive-ring {
+  box-shadow: 0 0 0 3px var(--ring-destructive);
+}
+
+/* ─── Autofill: the browser fills a field, the field keeps its tokens ─────────
+ * Chrome and Safari paint an autofilled field with their own yellow or blue and, worse, force
+ * `color: fieldtext !important`, a near-black that is unreadable on the dark and moonlight grounds.
+ * The fill and the text live on different elements, so there are two utilities:
+ *   - `autofill-clear` on the <input> / <textarea>: restores the text and caret color, and holds the
+ *     UA background off with an effectively endless transition (it can be delayed, not overridden).
+ *   - `autofill-tint` on the painted frame: a 6% brand wash over the ground the control sits on
+ *     (the --surface contract), so "filled for you" reads as a Koala state instead of a browser one.
+ * `:autofill` and `:-webkit-autofill` get separate rules: a pseudo-class a browser doesn't know
+ * invalidates the whole selector list it sits in. */
+@utility autofill-clear {
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    transition: background-color 0s 600000s, color 0s 600000s;
+  }
+}
+@utility autofill-tint {
+  &:has(:autofill) {
+    background-color: color-mix(in oklab, var(--foreground) 6%, var(--surface, var(--background)));
+  }
+  &:has(:-webkit-autofill) {
+    background-color: color-mix(in oklab, var(--foreground) 6%, var(--surface, var(--background)));
+  }
+}
+
+/* ─── Caret turn: one glyph that rotates to report state ──────────────────────
+ * The disclosure convention in a single class. A caret that reports open/closed is ONE mark that
+ * TURNS, never two glyphs crossfaded: a rotation reads as the same thing changing direction,
+ * where a swap reads as a substitution (#7).
+ *
+ * It bundles the beat WITH the reduced-motion stand-down because this stylesheet has no global
+ * `prefers-reduced-motion` reset, so the guard has to be written per call site - and every caret
+ * in the library had forgotten it independently. Making the guard inseparable from the transition
+ * is the only version of this convention that survives the next component.
+ *
+ * Which beat is part of the convention, not a per-site choice:
+ *   - `caret-turn`      : `duration-base`, for a caret answering a CONTENT REVEAL (accordion,
+ *                         tree branch, sidebar group, load-more), so the glyph and the height it
+ *                         announces move on one clock.
+ *   - `caret-turn-fast` : `duration-fast`, for a caret on a POPOVER TRIGGER (select, combobox,
+ *                         nav dropdown), which opens quicker than a region reveals.
+ *
+ * The ROTATION itself stays at the call site: it varies (180° for a panel, 90° for a tree branch,
+ * 45° for a plus becoming a cross) and so does what drives it (`group-data-[state=open]`, a React
+ * boolean). A later `duration-*` will NOT override these: both write the same property from their
+ * own rule, so source order decides rather than class order. Need a different beat? Then this
+ * isn't a disclosure caret - write the three utilities out longhand. The two are a conflict group
+ * in lib/utils.ts, so they dedupe against each other. */
+@utility caret-turn {
+  @apply transition-transform duration-base ease-out motion-reduce:transition-none;
+}
+@utility caret-turn-fast {
+  @apply transition-transform duration-fast ease-out motion-reduce:transition-none;
+}
+
+/* Ink sweep: the "still working" pass across a live line of text (a reasoning step in progress,
+ * the "Thinking" label). It is NOT gradient text: the glyphs keep their one ink colour, and an
+ * alpha mask (black = opaque, so no theme colour is involved) dims a soft band that travels left
+ * to right through them. The mask is 3x the line so the band enters and leaves off-edge. Held
+ * still, fully opaque, under reduced motion. */
+@utility ink-sweep {
+  mask-image: linear-gradient(90deg, #000 40%, rgb(0 0 0 / 0.35) 50%, #000 60%);
+  mask-size: 300% 100%;
+  mask-position: 100% 0;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: var(--animate-ink-sweep);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    mask-image: none;
+  }
+}
+
+/* Badge motion: a changing label rolls (the old word leaves up, the new one rises in, both through
+ * a light blur) and a swapped glyph grows in from a quarter. Plain cuts under reduced motion. */
+@keyframes badge-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+    filter: blur(2px);
+  }
+}
+
+@keyframes badge-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.6em);
+    filter: blur(2px);
+  }
+}
+
+@keyframes badge-glyph {
+  from {
+    opacity: 0;
+    scale: 0.25;
+    filter: blur(2px);
+  }
+}
+
+@utility animate-badge-in {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: badge-in var(--duration-base) var(--ease-out) both;
+  }
+}
+
+@utility animate-badge-out {
+  animation: badge-out var(--duration-base) var(--ease-out) forwards;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    visibility: hidden;
+  }
+}
+
+@utility animate-badge-glyph {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: badge-glyph var(--duration-base) var(--ease-out) both;
+  }
+}
+
+/* Lets a box tween between an intrinsic width/height (`fit-content`, `auto`) and a definite one.
+ * CSS cannot interpolate `width: fit-content → 100%` on its own; `interpolate-size` is what lets
+ * the browser run it through `calc-size()`. It is INHERITED, so it also licenses the same tween on
+ * anything inside. Progressive by nature: where it is unsupported the value still lands, just in
+ * one frame, which is the behaviour every browser had before. The Accordion's `pill` variant uses
+ * it to let an open card shrink back to a chip (see the note in its recipe for why the opposite
+ * direction stays instant). */
+@utility interpolate-size {
+  interpolate-size: allow-keywords;
+}
+
+/* The canonical section-heading SIZE scale: the SectionHeader `md` default (36 → 48px). One source
+ * of truth so the SectionHeader recipe, Gallery, and FAQs share the exact section-H2 size and never
+ * drift when it is tuned (change it here and every section lede follows). Weight/tracking/balance
+ * stay on each call site; only the responsive size lives here. Registered as a font-size group in
+ * lib/utils.ts so a `text-*` on the same element still overrides it via tailwind-merge. */
+@utility section-heading {
+  @apply text-4xl sm:text-5xl;
+}
+
+/* ─── Eyebrow: the small tracked caps label that names a group ────────────────
+ * The quiet uppercase line ABOVE a group or section: a sidebar group, a table-of-contents title,
+ * a comparison band, a panel's "RECENT ACTIVITY". One role, so its size and tracking stop drifting
+ * between call sites (11px here, 12px there, `wide` in one place and `0.16em` in the next).
+ *   - `eyebrow`      : 12px (`text-xs` + its paired 16px leading) · medium · `tracking-wider`
+ *                      (0.05em) · uppercase · meta ink. The sans label of the UI.
+ *   - `eyebrow-mono` : the system mono at the same 12px/16px · normal weight · 0.08em · uppercase ·
+ *                      meta ink. The house's typed-note voice (a Hero sign-off, a spec line).
+ *                      Mono is already wide, so it opens less than the sans would at 0.1em+.
+ * It sets the role, not the layout: margins, padding and alignment stay at the call site. Every
+ * declaration can be overridden by the matching utility on the same element (`font-semibold`,
+ * `tracking-wide`, `leading-relaxed`, `text-brand`, `text-white/80` on a photo): those sort after
+ * this rule, and the pair is outside tailwind-merge's font-size group on purpose, so a `text-sm`
+ * passed after it resizes the label instead of erasing the casing with it. The two are one conflict group in lib/utils.ts.
+ * The size is the scale's `text-xs`, never an arbitrary 10/11px: a smaller caps label is a badge
+ * or a chip, which has its own component. */
+@utility eyebrow {
+  @apply text-xs font-medium tracking-wider uppercase text-muted-foreground;
+}
+@utility eyebrow-mono {
+  @apply font-mono text-xs tracking-[0.08em] uppercase text-muted-foreground;
+}
+
+/* ─── Fade: a soft, static edge mask that dissolves a box into its surface ──────────
+ * The general primitive. `scroll-fade` below is its scroll-aware sibling: same fade band, but each
+ * edge's depth tracks scroll progress instead of being constant. Reach for `fade-*` whenever the
+ * bleed is constant (a marquee row, a masonry that clips at the section edges, a preview that peeks
+ * up from the bottom), and `scroll-fade-*` when the hint should follow the scroll position.
+ *
+ * Depth per edge is the `--fade-size` knob (default min(2.5rem, 12%) - 40px, but never more than 12%
+ * of the box, so short boxes don't over-fade); override per element with an arbitrary property, e.g.
+ * `[--fade-size:6%]`. Both the unprefixed and -webkit- properties are written so the mask holds in
+ * Safari. Registered in the same lib/utils.ts conflict group as scroll-fade, so any two fade/
+ * scroll-fade utilities (each writes mask-image) dedupe, last wins.
+ *
+ * The ramp inside the band is EASED, not linear. A two-stop linear mask moves alpha at a constant
+ * rate, so both ends of the band are corners in the curve and the eye reads them as lines: content
+ * "starts dissolving" on one edge and dies on another. `--fade-ramp` is a smoothstep ladder (alpha
+ * 1 → 0, flat at the start, flat at the finish) which leaves no line anywhere. The deeper the band
+ * the more that matters, which is why LoadMore's long dissolve leans on it.
+ *
+ * Shape: the band is its own mask LAYER, sized to `--fade-size` and pinned to its edge, over a solid
+ * layer covering the rest. Layers composite with the initial `add`, so the ramp's stops can be plain
+ * percentages OF THE BAND instead of nine calc()s against the box - which is what keeps a nine-stop
+ * curve readable. The solid layer overshoots 1px into each band so the two overlap rather than abut
+ * (abutting mask layers can antialias into a hairline seam; two overlapping opaque pixels cannot). */
+:root {
+  /* Alpha 1 → 0 on a smoothstep curve (t²(3-2t)), sampled every 12.5% of the band. Direction is the
+   * gradient's job: each utility below points this same ladder at the edge it fades. */
+  --fade-ramp: black 0%, rgb(0 0 0 / 0.96) 12.5%, rgb(0 0 0 / 0.84) 25%, rgb(0 0 0 / 0.68) 37.5%,
+    rgb(0 0 0 / 0.5) 50%, rgb(0 0 0 / 0.32) 62.5%, rgb(0 0 0 / 0.16) 75%, rgb(0 0 0 / 0.04) 87.5%,
+    transparent 100%;
+}
+
+@utility fade {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(to top, var(--fade-ramp)), linear-gradient(black, black),
+    linear-gradient(to bottom, var(--fade-ramp));
+  --fade-mask-size: 100% var(--fade-band), 100% calc(100% - 2 * var(--fade-band) + 2px),
+    100% var(--fade-band);
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: top, center, bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: top, center, bottom;
+  mask-repeat: no-repeat;
+}
+
+@utility fade-x {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(to left, var(--fade-ramp)), linear-gradient(black, black),
+    linear-gradient(to right, var(--fade-ramp));
+  --fade-mask-size: var(--fade-band) 100%, calc(100% - 2 * var(--fade-band) + 2px) 100%,
+    var(--fade-band) 100%;
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: left, center, right;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: left, center, right;
+  mask-repeat: no-repeat;
+}
+
+@utility fade-t {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(to top, var(--fade-ramp)), linear-gradient(black, black);
+  --fade-mask-size: 100% var(--fade-band), 100% calc(100% - var(--fade-band) + 1px);
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: top, bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: top, bottom;
+  mask-repeat: no-repeat;
+}
+
+@utility fade-b {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(black, black), linear-gradient(to bottom, var(--fade-ramp));
+  --fade-mask-size: 100% calc(100% - var(--fade-band) + 1px), 100% var(--fade-band);
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: top, bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: top, bottom;
+  mask-repeat: no-repeat;
+}
+
+@utility fade-l {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(to left, var(--fade-ramp)), linear-gradient(black, black);
+  --fade-mask-size: var(--fade-band) 100%, calc(100% - var(--fade-band) + 1px) 100%;
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: left, right;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: left, right;
+  mask-repeat: no-repeat;
+}
+
+@utility fade-r {
+  --fade-band: var(--fade-size, min(2.5rem, 12%));
+  --fade-mask: linear-gradient(black, black), linear-gradient(to right, var(--fade-ramp));
+  --fade-mask-size: calc(100% - var(--fade-band) + 1px) 100%, var(--fade-band) 100%;
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-size: var(--fade-mask-size);
+  -webkit-mask-position: left, right;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: var(--fade-mask);
+  mask-size: var(--fade-mask-size);
+  mask-position: left, right;
+  mask-repeat: no-repeat;
+}
+
+/* ─── Scroll Fade: the scroll-aware sibling of `fade` above ──────────────────────
+ * Same edge mask, but each edge's depth tracks scroll progress instead of being constant.
+ * Hints that more content lies past the fold by fading the leading/trailing edge of a
+ * scroll container into its surface - the only edge cue left once our scrollbars are hidden
+ * site-wide. Pure CSS, no JS: the fade is a `mask-image` gradient whose two stops are driven
+ * by scroll-progress animations (`animation-timeline: scroll(self …)`), so the edge nearest
+ * unseen content fades and the edge you've reached sharpens. At rest the top is crisp and the
+ * bottom fades; mid-scroll both fade; at the end the bottom sharpens back to a clean line.
+ *
+ * Token knobs (override per-element with an arbitrary property, e.g. `[--scroll-fade-size:4rem]`):
+ *   --scroll-fade-size   : fade-band depth per edge. Default min(2.5rem, 12%) - 40px, but never
+ *                          more than 12% of the box, so short containers don't over-fade.
+ *   --scroll-fade-reveal : the scroll distance an edge fades in / sharpens over. Default 6rem (96px).
+ *
+ * Each edge's depth is a registered <number> 0..1 (crisp..faded) so it can interpolate along the
+ * scroll timeline; the gradient multiplies it by --scroll-fade-size. Browsers without scroll-driven
+ * animations fall back (via @supports) to a static fade on the utility's edges. Registered as a
+ * conflict group in lib/utils.ts so two scroll-fade-* dedupe (last wins). Mask sits on a CSS var so
+ * the unprefixed and -webkit- properties share one definition. */
+@property --scroll-fade-t { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --scroll-fade-b { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --scroll-fade-l { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --scroll-fade-r { syntax: "<number>"; inherits: false; initial-value: 0; }
+
+/* One keyframe per edge/direction: an edge fades IN (enter, 0→1) as content scrolls under it, or
+ * sharpens (exit, 1→0) as that edge is reached. Each @utility picks the pair and the scroll range. */
+@keyframes scroll-fade-enter-t { from { --scroll-fade-t: 0; } to { --scroll-fade-t: 1; } }
+@keyframes scroll-fade-exit-b  { from { --scroll-fade-b: 1; } to { --scroll-fade-b: 0; } }
+@keyframes scroll-fade-enter-l { from { --scroll-fade-l: 0; } to { --scroll-fade-l: 1; } }
+@keyframes scroll-fade-exit-r  { from { --scroll-fade-r: 1; } to { --scroll-fade-r: 0; } }
+
+/* Vertical, both edges. `scroll-fade` is the common case (lists, menus, dialog bodies). */
+@utility scroll-fade {
+  --scroll-fade-mask: linear-gradient(
+    to bottom,
+    transparent 0,
+    black calc(var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-t)),
+    black calc(100% - var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-b)),
+    transparent 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-enter-t, scroll-fade-exit-b;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self block), scroll(self block);
+    animation-range:
+      0 var(--scroll-fade-reveal, 6rem),
+      calc(100% - var(--scroll-fade-reveal, 6rem)) 100%;
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-t: 1;
+    --scroll-fade-b: 1;
+  }
+}
+
+/* Horizontal, both edges (chip rows, segmented bars, wide tables). */
+@utility scroll-fade-x {
+  --scroll-fade-mask: linear-gradient(
+    to right,
+    transparent 0,
+    black calc(var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-l)),
+    black calc(100% - var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-r)),
+    transparent 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-enter-l, scroll-fade-exit-r;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range:
+      0 var(--scroll-fade-reveal, 6rem),
+      calc(100% - var(--scroll-fade-reveal, 6rem)) 100%;
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-l: 1;
+    --scroll-fade-r: 1;
+  }
+}
+
+/* Single edge: fade only the top (e.g. a chat log that should bleed into its header). */
+@utility scroll-fade-t {
+  --scroll-fade-mask: linear-gradient(
+    to bottom,
+    transparent 0,
+    black calc(var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-t)),
+    black 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-enter-t;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self block);
+    animation-range: 0 var(--scroll-fade-reveal, 6rem);
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-t: 1;
+  }
+}
+
+/* Single edge: fade only the bottom (hint that more rows sit below the fold). */
+@utility scroll-fade-b {
+  --scroll-fade-mask: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-b)),
+    transparent 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-exit-b;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self block);
+    animation-range: calc(100% - var(--scroll-fade-reveal, 6rem)) 100%;
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-b: 1;
+  }
+}
+
+/* Single edge: fade only the left. */
+@utility scroll-fade-l {
+  --scroll-fade-mask: linear-gradient(
+    to right,
+    transparent 0,
+    black calc(var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-l)),
+    black 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-enter-l;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--scroll-fade-reveal, 6rem);
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-l: 1;
+  }
+}
+
+/* Single edge: fade only the right. */
+@utility scroll-fade-r {
+  --scroll-fade-mask: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--scroll-fade-size, min(2.5rem, 12%)) * var(--scroll-fade-r)),
+    transparent 100%
+  );
+  -webkit-mask-image: var(--scroll-fade-mask);
+  mask-image: var(--scroll-fade-mask);
+  @supports (animation-timeline: scroll()) {
+    animation-name: scroll-fade-exit-r;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: scroll(self inline);
+    animation-range: calc(100% - var(--scroll-fade-reveal, 6rem)) 100%;
+  }
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-r: 1;
+  }
+}
+
+/*
+ * ring-orbit: a scroll-driven slow rotation for a ring (or cluster) of elements, the engine behind
+ * the Gallery "floating ring" section (gallery-section-4). As the band travels through the viewport,
+ * the ring rotates from --ring-orbit-from to --ring-orbit-to, passing through ~0° while the band is
+ * centered, so the framed photos orbit the centered lede as the reader scrolls. Pure CSS
+ * scroll-driven animation, the same family as `scroll-fade` (an `animation-timeline`, no JS and no
+ * scroll listener). Browsers without scroll-driven animations, and reduced-motion users, hold the
+ * ring at its neutral resting angle (no motion). Override the sweep per element with the arbitrary
+ * properties `[--ring-orbit-from:…]` / `[--ring-orbit-to:…]`.
+ *
+ * Note: the docs PreviewFrame sizes its iframe to the slab's own height, so the embedded preview
+ * never scrolls internally and holds the ring at its neutral angle; the orbit plays on a real
+ * scrolling page (and via the frame's open-in-new-tab when the page is taller than the viewport).
+ */
+@keyframes gallery-orbit {
+  from {
+    rotate: var(--ring-orbit-from, -11deg);
+  }
+  to {
+    rotate: var(--ring-orbit-to, 11deg);
+  }
+}
+
+@utility ring-orbit {
+  /* Neutral resting angle: the value held by no-scroll-timeline browsers and reduced-motion users,
+     and the angle the band passes through when it is centered in the viewport. */
+  rotate: 0deg;
+  @supports (animation-timeline: view()) {
+    animation-name: gallery-orbit;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: view();
+    /* From the band first entering the bottom of the viewport to fully leaving the top: one long,
+       smooth sweep that reads as a gentle orbit, never a spin. */
+    animation-range: entry 0% exit 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+    rotate: 0deg;
+  }
+}
+
+/*
+ * drift-x: a scroll-driven sideways drift for a row that runs past the page edges, the engine behind
+ * the Gallery "site wall" section (gallery-section-7). As the row travels through the viewport it
+ * slides from `-1 × --drift-x` to `+1 × --drift-x` on the inline axis, passing through its designed
+ * (centred) position while it sits mid-viewport. The travel is a percentage of the row's own width,
+ * 5% each way by default. Alternate rows flip direction with a negative travel
+ * (`[--drift-x:-5%]`), so neighbouring rows shear past each other.
+ *
+ * A @utility rather than an `--animate-*` token on purpose: the `animate-*` utility writes the
+ * `animation` shorthand, which resets `animation-timeline` to `auto` (a clock), so a scroll timeline
+ * cannot ride on it. Same family as `ring-orbit` and `scroll-fade`: pure CSS, no scroll listener,
+ * compositor-only (the standalone `translate` property). Browsers without scroll-driven animations
+ * and reduced-motion users hold the row still at its designed position. Like `ring-orbit`, it is
+ * still inside the docs PreviewFrame, whose iframe never scrolls.
+ */
+@keyframes drift-x {
+  from {
+    translate: calc(var(--drift-x, 5%) * -1) 0;
+  }
+  to {
+    translate: var(--drift-x, 5%) 0;
+  }
+}
+
+@utility drift-x {
+  @supports (animation-timeline: view()) {
+    animation-name: drift-x;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: view();
+    /* From the row entering the bottom of the viewport to fully leaving the top. */
+    animation-range: entry 0% exit 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+/*
+ * ─── Hero Stage: the scroll-scrubbed opening ───────────────────────────────────────────
+ * The engine behind the Hero's `HeroStage` parts (hero-section-17). One photograph opens
+ * full-bleed under a display word, contracts into a centred card as you scroll, and a collage
+ * assembles around it: three beats (state it → contract it → assemble around it) SCRUBBED by
+ * the scroll position rather than played on a clock, so the reader sets the pace and can run
+ * the whole thing backwards. Same family as `ring-orbit` and `drift-x`: pure CSS scroll-driven
+ * animation, no scroll listener, no JS, and no animation library (this is the piece people
+ * reach for GSAP/Lenis to do; a named `view-timeline` does it in the compositor for free).
+ *
+ * THE TIMELINE. The track declares one named view timeline, `--hero-stage`, and every animated
+ * part inside it reads that same timeline by name (a named timeline is visible to the element
+ * that declares it and to its descendants, so no `timeline-scope` is needed). The track is
+ * TALLER than the viewport, so its `contain` range is exactly the stretch where it covers the
+ * viewport, which is exactly the stretch where the pin is stuck: `contain 0%` is the frame the
+ * pin locks and `contain 100%` the frame it releases. Every part therefore expresses its beat
+ * as a plain percentage of "how far through the pin are we", and the beats stay in step with
+ * each other however tall the track is set.
+ *
+ * WHAT EACH BASE STYLE IS. The declarations OUTSIDE the `@supports` blocks are what browsers with
+ * no scroll-driven animations, and readers who asked for reduced motion, are left holding, so they
+ * are chosen to be a finished hero in their own right rather than a half-played frame: they are the
+ * LAST frame, not the first. The picture sits at its card size, the collage is assembled around it,
+ * and the eyebrow, lede and CTAs are where they land, on the page's own ground where they are
+ * legible and clickable with no scrim to carry them. Only the display word is gone, because a word
+ * sized to fill a screen cannot survive inside a card; the `<h1>` is still in the accessibility tree
+ * either way, and a composer who wants a headline VISIBLE at rest puts an ordinary `HeroTitle` in
+ * the closing reveal. Each keyframe states BOTH ends explicitly, so the animated telling never
+ * depends on where those base values sit.
+ *
+ * WHAT IT COSTS. `hero-stage-contract` animates width/height/border-radius, which is layout
+ * work rather than a compositor transform, and that is a deliberate trade: a non-uniform
+ * `scale` would squash the photograph and stretch the corner radius into ellipses, and the
+ * crisp constant radius through the whole contraction is the effect. It is one absolutely
+ * positioned box whose size reaches nothing else on the page (its siblings are absolutely
+ * positioned too, so nothing reflows off it), and the two beats that DO run over the collage
+ * are opacity/translate/scale only.
+ *
+ * Knobs (set per element with an arbitrary property, e.g. `[--hero-stage-h:60svh]`):
+ *   --hero-stage-track        : total scroll length of the section. Default 280svh: one viewport
+ *                               of statement, one of contraction, one of assembly, minus overlap.
+ *   --hero-stage-w / -h       : the card the media contracts INTO.
+ *   --hero-stage-radius       : that card's corner. Tracks the global radius knob.
+ *   --hero-stage-contract-end : where the contraction finishes. Default 55% of the pin.
+ *   --hero-stage-enter-*      : the window the late parts fade/rise through.
+ *   --hero-stage-step         : a part's place in the stagger (0, 1, 2 …).
+ *   --hero-stage-stagger      : how far apart one step sits from the next. Default 5%.
+ *   --hero-stage-shift        : how far a late part rises. Negative drops it in from above.
+ *   --hero-stage-drift        : how far it comes in on the inline axis. Negative arrives from the left.
+ *   --hero-stage-tilt         : the lean it arrives with and settles out of.
+ *   --hero-stage-parallax     : how much bigger the picture starts than its frame (1 = no parallax).
+ *   --hero-stage-exit-*       : the display word's push-through (scale, shift, blur).
+ *   --hero-stage-float-*      : the landed picture's ambient drift (x, y, duration).
+ */
+
+/* A part's index in the stagger, registered so it is a real <number> in the `calc()` that offsets
+ * its animation range. `inherits: false`: a step belongs to the one element it is set on, and must
+ * never leak down into a nested part that carries its own. */
+@property --hero-stage-step {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* Beat 1→2: the full-bleed frame contracts to a card. Width and height are stated as 100% so both
+ * ends of the interpolation are resolvable lengths (`auto` is not interpolable), and the frame is
+ * centred by `inset: 0` + `margin: auto`, never a transform, so `translate`/`scale` stay free for
+ * the parts that animate on the compositor. */
+@keyframes hero-stage-contract {
+  from {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  to {
+    /* A portrait card, not a square: the frame does not just shrink, it changes shape, and the
+       `object-fit: cover` picture reframes itself as it goes. Both ends of the range are clamped
+       against the viewport so the card is a card on a phone too. */
+    width: var(--hero-stage-w, min(86vw, 23rem));
+    height: var(--hero-stage-h, min(58svh, 34rem));
+    border-radius: var(--hero-stage-radius, var(--radius-3xl));
+  }
+}
+
+/* Beat 2: the display word (and the scrim that carries it) leaves. It sits INSIDE the contracting
+ * frame, so it is also being clipped as the frame closes in on it: the word is cut off by the
+ * card's edges at the same time as it fades, which is what makes the two read as one movement
+ * instead of a fade that happens to coincide with a resize. */
+@keyframes hero-stage-exit {
+  from {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+  to {
+    /* The word does not shrink away, the camera goes THROUGH it: it grows past the frame, lifts a
+       little and defocuses as it passes, which is the one move that reads as depth rather than as a
+       fade. The scrim rides the same beat with the growth and the blur turned off, since a scrim
+       that swells past its own box would show its edges. */
+    /* Every end is a knob, because this one keyframe is shared by three things that each want a
+       different part of the move: the scrim only fades, the display line as a whole only grows and
+       lifts (`--hero-stage-exit-opacity: 1` keeps it from fading on top of its own letters), and
+       each letter inside it fades and defocuses on its own staggered beat. Splitting the move
+       across the line and its letters is what keeps them from multiplying: two nested opacity
+       fades would darken the middle of the cascade, two nested scales would tear the word apart. */
+    opacity: var(--hero-stage-exit-opacity, 0);
+    scale: var(--hero-stage-exit-scale, 1.22);
+    translate: 0 var(--hero-stage-exit-shift, -6%);
+    filter: blur(var(--hero-stage-exit-blur, 10px));
+  }
+}
+
+/* One letter of the display line leaving through its mask. Its own keyframe rather than the shared
+ * exit, for two reasons the shared one cannot give it:
+ *
+ * 1. TRAVEL PAST THE INK, not past the box. A glyph's ink is not bounded by its line box: at a
+ *    display size with `leading` under 1 the box is cut tight around the text, and a descender
+ *    hangs well below it (a "g" at 187px overhangs by about 40px). A letter translated exactly one
+ *    box-height up has its BOX clear of the mask while its tail is still inside it, and since these
+ *    letters no longer fade, that tail stays on screen at full strength for the rest of the page.
+ *    The default overshoots to 140% so the deepest descender clears.
+ * 2. A GUARANTEED empty end. The opacity holds at 1 through the whole slide and only drops over the
+ *    last stretch, by which point the letter is long gone behind the edge, so it is insurance
+ *    against a face or a size whose ink overhangs further still, and never a fade anyone can see.
+ *
+ * `linear` is what makes that safe: a multi-stop keyframe applies its timing function to EVERY
+ * segment, so an eased curve would re-ease at 72% and put a visible hitch in the middle of a slide
+ * that is supposed to be one clean movement. A scrubbed animation maps scroll distance onto the
+ * move anyway, so linear is the honest curve for it. */
+@keyframes hero-stage-letter {
+  0% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    translate: 0 var(--hero-stage-letter-travel, -140%);
+    opacity: 0;
+  }
+}
+
+/* The picture inside the contracting frame, pushing in as the frame closes on it. The picture and
+ * its frame moving at DIFFERENT rates is what gives the contraction depth: without it the shot is
+ * simply a smaller copy of itself. It only ever scales up, never down, so a `cover` picture can
+ * never expose an edge. */
+@keyframes hero-stage-parallax {
+  from {
+    scale: var(--hero-stage-parallax, 1.16);
+  }
+  to {
+    scale: 1;
+  }
+}
+
+/* The ambient drift a collage picture keeps once it has landed: a very slow, very small Ken Burns
+ * inside its own frame, so the finished composition breathes instead of freezing the moment the
+ * reader stops scrolling. It moves the PICTURE, never the card, so no shadow or edge shimmers. The
+ * scale floor is above 1 at every step, which is the margin the drift moves within. */
+@keyframes hero-stage-float {
+  0% {
+    translate: 0 0;
+    scale: 1.06;
+  }
+  50% {
+    translate: var(--hero-stage-float-x, -1.5%) var(--hero-stage-float-y, -2%);
+    scale: 1.09;
+  }
+  100% {
+    translate: 0 0;
+    scale: 1.06;
+  }
+}
+
+/* Beat 3: a late part rises into place. `pointer-events` is in the keyframes so a CTA that has not
+ * arrived yet cannot be clicked through its own transparency; it is a discrete property, so it
+ * flips halfway rather than easing, and the real guard is z-order (the parts sit UNDER the media,
+ * which covers the viewport until it has contracted). Belt and braces on purpose: the click target
+ * is the one thing here that fails silently. */
+@keyframes hero-stage-enter {
+  from {
+    opacity: 0;
+    /* A part arrives from its OWN side, leaning, and settles level: `--hero-stage-drift` carries it
+       in on the inline axis and `--hero-stage-tilt` gives it the lean. A collage whose pieces all
+       rise the same 1.75rem reads as a list fading in; pieces that come in off their own edge read
+       as a wall being assembled. `rotate` is the standalone property here, so a Tailwind
+       `rotate-*` on the same element would be overwritten by this. */
+    translate: var(--hero-stage-drift, 0) var(--hero-stage-shift, 1.75rem);
+    scale: 0.92;
+    rotate: var(--hero-stage-tilt, 0deg);
+    pointer-events: none;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    rotate: 0deg;
+    pointer-events: auto;
+  }
+}
+
+/* The scroll track: the section's real height, and the only place the timeline is declared. It is
+ * pure scroll length, nothing is painted here. Without scroll-driven animations (or under reduced
+ * motion) there is no scrubbing to do, so the track collapses to a single viewport and the section
+ * becomes an ordinary full-bleed hero instead of three viewports of dead scrolling. */
+@utility hero-stage-track {
+  position: relative;
+  height: 100svh;
+  @supports (animation-timeline: view()) {
+    height: var(--hero-stage-track, 280svh);
+    view-timeline-name: --hero-stage;
+    view-timeline-axis: block;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    height: 100svh;
+  }
+}
+
+/* The pinned stage: one viewport held still while the track scrolls past it. `overflow: clip`, not
+ * `hidden`, so it crops a collage piece that hangs off an edge without becoming a scroll container
+ * of its own (see the Hero root for the same call). */
+@utility hero-stage-pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: clip;
+}
+
+/* The contracting frame. This utility owns the geometry and the beat only; the surface it wears
+ * (the fill, the clip, the edge) belongs to the `stageMedia` slot in the Hero recipe. `--ease-sine`
+ * rather than `linear`: zero velocity at BOTH ends means the frame does not jump into motion the
+ * instant the page moves, and settles into the card rather than stopping dead, which is the whole
+ * difference between a scrubbed animation that feels weighted and one that feels dragged. */
+@utility hero-stage-media {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  /* The card it lands on IS the base: a browser that cannot scrub the contraction shows the frame
+     where the contraction would have left it, not where it would have started. */
+  width: var(--hero-stage-w, min(86vw, 23rem));
+  height: var(--hero-stage-h, min(54svh, 32rem));
+  border-radius: var(--hero-stage-radius, var(--radius-3xl));
+  @supports (animation-timeline: view()) {
+    animation-name: hero-stage-contract;
+    animation-fill-mode: both;
+    animation-timing-function: var(--ease-sine);
+    animation-timeline: --hero-stage;
+    animation-range: contain 0% contain var(--hero-stage-contract-end, 55%);
+  }
+  /* The picture rides its own, slower beat inside the frame (see `hero-stage-parallax`). Scoped to
+     the direct child so a caption or the display word set over the picture is not swept up in it. */
+  & > img,
+  & > video {
+    @supports (animation-timeline: view()) {
+      animation-name: hero-stage-parallax;
+      animation-fill-mode: both;
+      animation-timing-function: var(--ease-sine);
+      animation-timeline: --hero-stage;
+      animation-range: contain 0% contain var(--hero-stage-contract-end, 55%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+    & > img,
+    & > video {
+      animation-name: none;
+    }
+  }
+}
+
+/* The ambient drift for a landed collage picture. A second animation on a DIFFERENT element from
+ * the entrance (the picture, not the card), because one element can only carry one
+ * `animation-name` off one timeline: the card is busy arriving on the scroll timeline, so the
+ * breathing goes on the picture and runs on an ordinary clock. Give neighbours different durations
+ * and directions or the whole wall sways in step; `HeroStageCard` does that from its `index`. */
+@utility hero-stage-photo {
+  & > img,
+  & > video {
+    animation: hero-stage-float var(--hero-stage-float-duration, 26s) var(--ease-sine) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    & > img,
+    & > video {
+      animation-name: none;
+    }
+  }
+}
+
+/* The display word and its scrim: whole while the frame first moves, gone well before the card
+ * lands, so the card arrives clean. Hidden at its base, because the frame the fallback shows is the
+ * one where the word has already left. */
+@utility hero-stage-exit {
+  opacity: 0;
+  @supports (animation-timeline: view()) {
+    animation-name: hero-stage-exit;
+    animation-fill-mode: both;
+    animation-timing-function: var(--ease-sine);
+    animation-timeline: --hero-stage;
+    /* The same per-step offset the entrance uses, so the exit can be staggered too: give each
+       letter of the display line its own `--hero-stage-step` and the line leaves character by
+       character instead of as one block. The stagger defaults to 0, so a part that does not set it
+       (the scrim, an unsplit line) keeps the plain range. */
+    animation-range:
+      contain
+        calc(
+          var(--hero-stage-exit-start, 4%) + var(--hero-stage-step) *
+            var(--hero-stage-exit-stagger, 0%)
+        )
+      contain
+        calc(
+          var(--hero-stage-exit-end, 38%) + var(--hero-stage-step) *
+            var(--hero-stage-exit-stagger, 0%)
+        );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+/* One letter sliding up out of its mask, on its own beat. Same staggered range as the line it
+ * belongs to (it reads the same `--hero-stage-step` / `--hero-stage-exit-*` knobs, so retuning the
+ * cascade retunes both), a different keyframe. It needs no base of its own: the line above it is
+ * already hidden at rest, which is what a browser with no scroll-driven animations shows. */
+@utility hero-stage-letter {
+  @supports (animation-timeline: view()) {
+    animation-name: hero-stage-letter;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: --hero-stage;
+    animation-range:
+      contain
+        calc(
+          var(--hero-stage-exit-start, 4%) + var(--hero-stage-step) *
+            var(--hero-stage-exit-stagger, 0%)
+        )
+      contain
+        calc(
+          var(--hero-stage-exit-end, 38%) + var(--hero-stage-step) *
+            var(--hero-stage-exit-stagger, 0%)
+        );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+/* A late part arriving: a collage piece, the eyebrow, the lede, the CTAs. Visible at its base (the
+ * fallback shows the assembled frame); the keyframe's `from` is what holds it back until its beat.
+ * `--ease-out` is the enter curve: scrubbed, it arrives early in its window and settles over the
+ * rest, so the reader is never dragging a half-faded word up the screen. */
+@utility hero-stage-enter {
+  @supports (animation-timeline: view()) {
+    animation-name: hero-stage-enter;
+    animation-fill-mode: both;
+    animation-timing-function: var(--ease-out);
+    animation-timeline: --hero-stage;
+    animation-range:
+      contain
+        calc(
+          var(--hero-stage-enter-start, 50%) + var(--hero-stage-step) *
+            var(--hero-stage-stagger, 5%)
+        )
+      contain
+        calc(
+          var(--hero-stage-enter-end, 74%) + var(--hero-stage-step) *
+            var(--hero-stage-stagger, 5%)
+        );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+/*
+ * ─── Hero Parallax: the full-bleed opener that drifts as the page scrolls ──────────────
+ * The engine behind `HeroBackground parallax` and the Hero's `cover` layout (hero-section-26).
+ * One picture or clip fills the band; as the reader scrolls, the media travels slower than the
+ * band it sits in and the copy over it travels a little faster, so the two planes separate and
+ * the band reads as a window onto something behind the page rather than a flat photograph glued
+ * to it. Same family as `hero-stage-*`, `ring-orbit` and `drift-x`: pure CSS scroll-driven
+ * animation, no scroll listener, no rAF loop, no animation library (parallax is THE effect people
+ * install GSAP + Lenis for; a view timeline does it in the compositor, off the main thread, for
+ * free) and it runs backwards for nothing when the reader scrolls back up.
+ *
+ * THE TIMELINE. The band declares one named view timeline, `--hero-parallax`, and the media and
+ * the copy inside it read it by name (a named timeline is visible to the element that declares it
+ * and to its descendants, so no `timeline-scope` is needed). The range is `cover 0% → 100%`: the
+ * whole stretch from the band's top edge reaching the bottom of the viewport to its bottom edge
+ * leaving the top, which is exactly the stretch where a reader can see it. The band NEVER carries
+ * a transform of its own, so the thing that declares the timeline is never moved by it: no
+ * feedback loop between what is measured and what is animated.
+ *
+ * A hero opens at the very top of the page, so it is already halfway through its own `cover` range
+ * when the page loads: the first frame a reader gets is the MIDDLE of the travel, with the media
+ * level in its frame, and scrolling moves it from there in one direction only. That is why the
+ * travel is stated symmetrically (-travel → +travel) instead of 0 → travel.
+ *
+ * NO GAPS, EVER. The media is held at `--hero-parallax-zoom` for the whole range, which leaves
+ * (zoom - 1) / 2 of its own height as slack above and below the frame; the travel moves within
+ * that slack. THE INVARIANT: `--hero-parallax-travel` <= (zoom - 1) / 2. The defaults (1.28 and
+ * 12%) leave 14% of slack against 12% of travel: enough travel to read as two planes at a glance,
+ * with room left to retune either by a little without the frame ever showing its ground. Percentages on `translate` resolve against the element's own
+ * border box, and the individual `translate`/`scale` properties compose as translate × scale, so
+ * the travel is NOT multiplied by the zoom: the two knobs stay independent.
+ *
+ * WHAT THE BASE IS. Outside the `@supports` blocks nothing is transformed at all: the media covers
+ * its band level and the copy sits where it is written. Unlike `hero-stage`, whose fallback has to
+ * be its LAST frame (a composition that assembles has no meaning half-built), a parallax has a
+ * neutral frame, and the neutral frame is a finished, full-bleed media hero. Browsers with no
+ * scroll-driven animations, and readers who asked for reduced motion, get exactly that.
+ *
+ * Knobs (set per element with an arbitrary property, e.g. `[--hero-parallax-travel:5%]`):
+ *   --hero-parallax-travel : how far the media drifts each way, as a share of its own height.
+ *   --hero-parallax-zoom   : how much bigger than its frame it is held. See THE INVARIANT above.
+ *   --hero-parallax-lift   : how far the copy over it travels the other way.
+ */
+
+/* The media's drift. `scale` is stated on BOTH ends rather than left to a base style: a keyframe
+ * that named only `translate` would still reset `scale` to its own base for the whole range (the
+ * animation owns every property it mentions and nothing else, but `fill-mode: both` pins the
+ * element to the from-frame off-range), and the zoom is what keeps the drift off the frame's edge
+ * at every moment of it. */
+@keyframes hero-parallax-drift {
+  from {
+    translate: 0 calc(-1 * var(--hero-parallax-travel, 12%));
+    scale: var(--hero-parallax-zoom, 1.28);
+  }
+  to {
+    translate: 0 var(--hero-parallax-travel, 12%);
+    scale: var(--hero-parallax-zoom, 1.28);
+  }
+}
+
+/* The copy's counter-move: it leaves upward slightly faster than the band carries it, so it
+ * separates from the media instead of riding along with it. Small on purpose (3rem over two
+ * viewports of scrolling): copy that visibly slides is copy that is hard to read, and the depth
+ * comes from the DIFFERENCE between the two planes, not from either one's distance. */
+@keyframes hero-parallax-lift {
+  from {
+    translate: 0 var(--hero-parallax-lift, 4.5rem);
+  }
+  to {
+    translate: 0 calc(-1 * var(--hero-parallax-lift, 4.5rem));
+  }
+}
+
+/* The band: the only place the timeline is declared, and the one element in here that is never
+ * transformed. It paints nothing and changes no geometry, so it is safe to add to any hero root. */
+@utility hero-parallax-track {
+  @supports (animation-timeline: view()) {
+    view-timeline-name: --hero-parallax;
+    view-timeline-axis: block;
+  }
+}
+
+/* The media layer. The beat rides the PICTURE, not the layer: the layer is what clips the travel,
+ * so it has to stay still. Scoped to the direct child so a scrim or a caption laid over the picture
+ * is not swept up in it. `linear`, and only ever `linear`: a scrubbed animation's timing function
+ * maps scroll distance onto the move, so an ease would make the picture lurch and stall under a
+ * reader scrolling at a constant speed. */
+@utility hero-parallax-media {
+  & > img,
+  & > video {
+    @supports (animation-timeline: view()) {
+      animation-name: hero-parallax-drift;
+      animation-fill-mode: both;
+      animation-timing-function: linear;
+      animation-timeline: --hero-parallax;
+      animation-range: cover 0% cover 100%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    & > img,
+    & > video {
+      animation-name: none;
+    }
+  }
+}
+
+/* The copy over it. Same timeline, same range, opposite direction. */
+@utility hero-parallax-lift {
+  @supports (animation-timeline: view()) {
+    animation-name: hero-parallax-lift;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    animation-timeline: --hero-parallax;
+    animation-range: cover 0% cover 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+
+/*
+ * ─── Hero Cover: full bleed contracting into the site container ───────────────────────
+ * The second beat of the cover hero, riding the same `--hero-parallax` timeline: the band opens
+ * edge to edge and, as the reader scrolls, pulls in to the page's own container (90rem, the
+ * `max-w-8xl` every other section sits in) and rounds its corners, so the opening picture hands the
+ * page back to its grid instead of ending at a hard seam. The caption steps in with it and keeps
+ * its distance from the frame's edge the whole way.
+ *
+ * ONE NUMBER DRIVES IT. The band animates `--hero-cover-t`, a registered <number> going 0 → 1 that
+ * INHERITS, and the frame's width, its corner and the caption's padding are plain `calc()`s reading
+ * it. Nothing else animates, so the three can never drift out of step, and the end state is stated
+ * once, as itself, rather than as three keyframes that have to agree.
+ *
+ * Why a number and not the width directly: the end width is a `min()` of "the viewport less the
+ * gutter" and "the container", which is what makes the same beat land on a phone and on a 1920
+ * screen. Interpolating between `100%` and a `min()` of mixed units is exactly where browsers fall
+ * back to a discrete jump, and a hero that snaps halfway is worse than one that never moves. A
+ * <number> interpolates everywhere, and the `calc()` around it does the geometry per frame.
+ *
+ * What it costs: the frame's width is layout work, and the inherited property recalculates the
+ * band's subtree (a frame, a picture, a scrim and a caption) per frame. The same trade the scroll
+ * stage makes, for the same reason: a `scale` would squash the picture and stretch the corner into
+ * ellipses, and the crisp constant radius through the contraction is the effect.
+ *
+ *   --hero-cover-gutter : what the frame leaves at the page edge once contracted.
+ *   --hero-cover-max    : the container it lands in. Defaults to the site's own 90rem.
+ *   --hero-cover-radius : the corner it rounds to. Tracks the global radius knob.
+ *   --hero-cover-pad    : the caption's own padding INSIDE the frame, before the gutter is added.
+ *   --hero-cover-contract-start / -end : where in the scroll the contraction runs. A hero opens at
+ *                         the top of the page, which is already 50% through its own `cover` range,
+ *                         so the beat starts there and finishes half a viewport of scrolling later.
+ */
+
+/* The one animated value. `inherits: true` on purpose: the frame and the caption are siblings that
+ * both have to read it, and the band is the only place it is ever set. */
+@property --hero-cover-t {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes hero-cover-contract {
+  from {
+    --hero-cover-t: 0;
+  }
+  to {
+    --hero-cover-t: 1;
+  }
+}
+
+/* The band: declares the parallax timeline for everything inside it (so a cover does not also need
+ * `hero-parallax-track`) and runs the contraction. `--ease-sine` rather than `linear`, unlike the
+ * drift: the drift is a position map, where an ease would lurch, but the contraction is a move with
+ * a beginning and an end, and zero velocity at both ends is what keeps it from snapping into motion
+ * the instant the page moves. */
+@utility hero-cover-band {
+  --hero-cover-gutter: clamp(1rem, 3vw, 2.5rem);
+  /* The caption's padding, computed here and inherited, so the words hold the SAME distance from
+   * the frame's edge at every width and at every moment of the contraction. The caption column is
+   * the site container (`max-w-8xl`) and the frame lands on `min(viewport - gutter, container)`,
+   * so what the padding has to make up is the difference between the two left edges: nothing once
+   * the page is wider than the container (both sit at the same offset, so the words would step
+   * inward for no reason), and the whole gutter once it is narrower. Hence the nested `max()`
+   * rather than "add the gutter": that shortcut reads right at 1440 and leaves the copy 72px inside
+   * the frame at 1920. The percentage resolves where the value is USED, against the caption's
+   * containing block, which is the band.
+   *
+   * It lives on the band, not on the caption, because the responsive step is a class on the band
+   * (a sm: arbitrary property) and var() resolves against the element's own final custom
+   * properties. The caption reads it as a plain Tailwind padding, so nothing depends on which of
+   * two same-specificity rules a build happens to emit last. */
+  --hero-cover-caption-pad: calc(
+    var(--hero-cover-pad, 1.5rem) + var(--hero-cover-t) *
+      max(
+        0px,
+        var(--hero-cover-gutter) -
+          max(0px, (100% - var(--hero-cover-max, var(--container-8xl))) / 2)
+      )
+  );
+  @supports (animation-timeline: view()) {
+    view-timeline-name: --hero-parallax;
+    view-timeline-axis: block;
+    animation-name: hero-cover-contract;
+    animation-fill-mode: both;
+    animation-timing-function: var(--ease-sine);
+    animation-timeline: --hero-parallax;
+    animation-range:
+      cover var(--hero-cover-contract-start, 50%) cover var(--hero-cover-contract-end, 78%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: none;
+  }
+}
+
+/* The frame. At `t: 0` it is the viewport; at `t: 1` it is the container, centred by `inset: 0` +
+ * `margin-inline: auto` rather than a transform, so `translate`/`scale` stay free for the picture
+ * drifting inside it. `translateZ(0)` is not a performance hint: Chromium skips an un-composited
+ * ancestor's rounded clip on a composited child, and the picture in here IS composited (it carries
+ * the drift, and a <video> always is), so without the promotion its square corners poke through the
+ * rounded frame. See memory rounded-clip-composited-child. */
+@utility hero-cover-frame {
+  inset: 0;
+  margin-inline: auto;
+  transform: translateZ(0);
+  width: calc(
+    100% - var(--hero-cover-t) *
+      (
+        100% -
+          min(
+            100% - 2 * var(--hero-cover-gutter, 2rem),
+            var(--hero-cover-max, var(--container-8xl))
+          )
+      )
+  );
+  border-radius: calc(var(--hero-cover-t) * var(--hero-cover-radius, var(--radius-3xl)));
+}
+
+
+
+
+/* ─── Smart dividers: a rule only earns its space when it separates two things ──────────
+ * A `Divider` is smart by default (it carries `data-smart`; `static` drops it). These rules
+ * hide it in every orphaned case so a list never shows a rule that separates nothing:
+ *   1. it's the first or last element of its group (a leading / trailing rule), or
+ *   2. it sits directly after another divider (a doubled rule: keep one, drop the rest), or
+ *   3. nothing visible follows it (trailing content filtered or rendered away).
+ *
+ * The contract is the idiomatic React one: absent content leaves NO node (renders `null`) or
+ * carries the `hidden` attribute, so a neighbour that is gone is gone from the box too. Content
+ * merely `display:none`'d via a class is invisible to `:has`, so collapse it by not rendering
+ * it, or mark the divider `static`. There is no backward sibling combinator in CSS, so the
+ * "nothing before me" side is covered by `:first-child` (rule 1) under the null contract.
+ *
+ * Unlayered (not inside `@layer`) so the `display:none` reliably beats a utility-layer
+ * `block`/`flex` a consumer might add via `className`, with no `!important` needed. */
+[data-slot="divider"][data-smart]:first-child,
+[data-slot="divider"][data-smart]:last-child,
+[data-slot="divider"] + [data-slot="divider"][data-smart],
+[data-slot="divider"][data-smart]:not(:has(~ :not([data-slot="divider"]):not([hidden]))) {
+  display: none;
+}
+
+/* The Command palette's separator gets the same guarantee, keyed on its own structure.
+ * Filtering collapses an empty group to `display:none` (a class, invisible to `:has`), so we
+ * test the real signal instead: a group that still owns a visible `command-item` (filtered rows
+ * stay mounted with `hidden`). The separator shows
+ * only when a row-bearing group survives on the side that would otherwise strand it: this is
+ * what stops a separator floating beside a collapsed group or over the empty state. */
+[data-slot="command-separator"]:first-child,
+[data-slot="command-separator"]:last-child,
+[data-slot="command-group"]:not(:has([data-slot="command-item"]:not([hidden]))) + [data-slot="command-separator"],
+[data-slot="command-separator"]:not(:has(~ [data-slot="command-group"]:has([data-slot="command-item"]:not([hidden])))) {
+  display: none;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* polish: crisper text on macOS. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Kerning + common/contextual ligatures sitewide for clean letterfit. Inter
+       (body) has no extra axis here, but `font-optical-sizing: auto` is inherited by
+       the DM Sans headings below (opsz 9–40, loaded in layout.tsx) so their letterfit
+       self-tunes by size. `font-variant-ligatures` is used over low-level
+       `font-feature-settings` so it never clobbers the `tabular-nums`
+       (`font-variant-numeric`) we set on dynamic figures. */
+    font-optical-sizing: auto;
+    font-kerning: normal;
+    font-variant-ligatures: common-ligatures contextual;
+  }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /* koala:site-only */
+  /* Smooth anchor jumps for the docs TOC; respects reduced-motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+  /* koala:end-site-only */
+  /* The check draw is decorative: honor reduced-motion by showing the full stroke instantly. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="checkbox-indicator"] path {
+      animation: none;
+    }
+  }
+  /* Skeleton animation is purely decorative: hold a static placeholder under reduced-motion
+   * (neither the pulse nor the shimmer overlay should run). */
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="skeleton"],
+    [data-slot="skeleton"]::after {
+      animation: none;
+    }
+    [data-slot="skeleton"]::after {
+      display: none;
+    }
+  }
+  /* Hero cursors are pure decoration: under reduced motion they hold still where they are placed
+   * and the click ripple never shows. Backs up the part's own motion-reduce classes. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="hero-cursor"] * {
+      animation: none;
+    }
+    [data-slot="hero-cursor-ping"] {
+      display: none;
+    }
+  }
+  /* polish: balanced headings, no orphans in body copy. */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+  }
+  /* Headings h1–h4 are set in DM Sans; h5/h6 stay in Inter, the UI/body face, so the
+     family swaps at the h4/h5 boundary. The display voice has to reach the level where
+     content actually lives - a post title, a pricing tier name, an FAQ question are all
+     h3 - or a section announces itself in DM Sans and its own contents answer in Inter.
+     Bare element rules, so a call site can still swap the family with a `font-*` utility:
+     the handful of h3/h4 that are 14px UI labels rather than titles (FormSectionTitle,
+     FooterColumnTitle, the editor's prose h4) opt back into `font-sans` that way. The
+     test is role, not size - a heading that shares its size and baseline with the copy
+     beside it keeps the copy's face. */
+  h1, h2, h3, h4 {
+    @apply font-heading;
+  }
+  /* Tracking is display-only, and deliberately NOT extended to h3/h4: the negative value
+     compensates for DM Sans setting a touch wider than Inter at display sizes (optical
+     sizing tightens those further on top of this). At 16-20px that compensation stops
+     paying for itself and starts eating the letterfit. Element-level, so any call site
+     that sets an explicit `tracking-*` utility still wins on specificity (class > element). */
+  h1, h2 {
+    letter-spacing: -0.015em;
+  }
+  /* Must stay h5/h6 only. Both blocks are element-specificity (0,0,1), so leaving h3/h4
+     here would win on source order and silently undo the rule above. */
+  h5, h6 {
+    @apply font-sans;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /*
+   * Inline code mentions (`data-mounted`, `text-sm`, …) get a subtle chip so they read as
+   * code, not prose. One canonical treatment for the whole docs. Scoped to
+   * `:not(pre) > code` so fenced blocks keep the highlighter's bare styling. `text-foreground`
+   * lifts the mention out of muted body copy; `text-sm` is the single inline-code size, so
+   * call sites don't set their own (any that still do just match this).
+   */
+  :not(pre) > code {
+    @apply rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground;
+  }
+  /* koala:site-only - a buyer's app keeps its scrollbars; hiding them is this site's call. */
+  /*
+   * Hidden scrollbars site-wide: surfaces stay clean (sidebar, TOC, the page itself, and
+   * any overflow region) while everything is still scrollable by wheel, trackpad, drag, or
+   * keyboard. `scrollbar-width` covers Firefox; the `::-webkit-scrollbar` rule covers
+   * Chrome/Safari/Edge.
+   */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  /* koala:end-site-only */
+}

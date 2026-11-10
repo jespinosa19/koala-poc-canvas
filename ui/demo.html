@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" class="h-full antialiased">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Koala POC Canvas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        var d = document.documentElement
+        var saved = null
+        try { saved = localStorage.getItem("theme") } catch (e) {}
+        // Koala UI tactile concept with the Lime accent. Tactile was designed in dark, so dark is the
+        // default until the owner picks a theme.
+        d.dataset.concept = "tactile"
+        d.dataset.accent = "lime"
+        var dark = saved === "system" ? matchMedia("(prefers-color-scheme: dark)").matches : saved ? saved === "dark" || saved === "moonlight" : true
+        d.classList.add(saved && saved !== "system" ? saved : dark ? "dark" : "light")
+      })()
+    </script>
+  </head>
+  <body class="relative min-h-full bg-background text-foreground">
+    <div id="root"></div>
+    <script type="module" src="./demo.tsx"></script>
+  </body>
+</html>

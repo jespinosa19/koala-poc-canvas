@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Koala POC Canvas frame</title>
+    <style>
+      html, body { margin: 0; background: #0a0a0a; }
+      img { display: block; width: 100%; height: auto; }
+    </style>
+  </head>
+  <body>
+    <img id="still" alt="" />
+    <script>
+      var params = new URLSearchParams(location.search)
+      var still = document.getElementById("still")
+      still.alt = params.get("title") || ""
+      document.title = params.get("title") || document.title
+      var src = params.get("src") || ""
+      if (/^https:\/\//.test(src)) still.src = src
+    </script>
+  </body>
+</html>
