@@ -49,7 +49,7 @@ export const INK_MODE_KEYS: Record<string, InkMode> = Object.fromEntries(
   MODES.map(({ mode, key }) => [key.toLowerCase(), mode]),
 )
 
-export type InkStroke = Pick<CanvasDrawing, "tool" | "color" | "size" | "frameId" | "points" | "scrollX" | "scrollY"> & {
+export type InkStroke = Pick<CanvasDrawing, "tool" | "color" | "size" | "frameId" | "points" | "scrollX" | "scrollY" | "url"> & {
   id: string
 }
 

@@ -245,6 +245,7 @@ const commentView = (comment, state) => {
       ? { area: { x: comment.x, y: comment.y, width: comment.width, height: comment.height } }
       : {}),
     frame: frame ? { id: frame.id, title: frame.title, src: frame.src, width: frame.width, height: frame.height } : null,
+    ...(comment.url ? { page: `made on ${comment.url}, a page the owner navigated to inside the frame, not the variant itself` } : {}),
   }
 }
 
@@ -275,7 +276,7 @@ const drawingView = (drawing, state, withPoints = false) => {
     : []
   return {
     ...rest,
-    describe: `${drawing.color} ${INK_NOUN[drawing.tool]} ${where} ${at}${on}`,
+    describe: `${drawing.color} ${INK_NOUN[drawing.tool]} ${where} ${at}${on}${drawing.url ? `, drawn on ${drawing.url} (navigated away from the variant)` : ""}`,
     frame: frame ? { id: frame.id, title: frame.title, src: frame.src, width: frame.width, height: frame.height } : null,
     nearComments: near,
     ...(withPoints ? { points } : { pointCount: points.length }),
@@ -460,7 +461,8 @@ async function screenshot(state, frame, o = opts) {
 
     if (o.pins) {
       const pins = state.comments
-        .filter((comment) => comment.frameId === frame.id && (o.all || !comment.resolved))
+        // The shot is the variant: marks made on a page navigated to inside the frame don't belong on it.
+        .filter((comment) => comment.frameId === frame.id && !comment.url && (o.all || !comment.resolved))
         .map((comment) => ({
           n: state.comments.indexOf(comment) + 1,
           x: comment.x + comment.scrollX,
@@ -468,7 +470,7 @@ async function screenshot(state, frame, o = opts) {
           w: comment.width ?? 0,
           h: comment.height ?? 0,
         }))
-      const ink = (state.drawings ?? []).filter((drawing) => drawing.frameId === frame.id)
+      const ink = (state.drawings ?? []).filter((drawing) => drawing.frameId === frame.id && !drawing.url)
       if (ink.length) await evaluate(inkOverlayScript(ink))
       await evaluate(`(() => {
         for (const pin of ${JSON.stringify(pins)}) {
@@ -683,6 +685,7 @@ async function main() {
           const frame = draft.frames.find((item) => item.id === id)
           if (verdict === "none") delete frame.verdict
           else frame.verdict = verdict
+          delete frame.verdictUrl
           frame.updatedAt = now()
           changed = frame
         },

@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ArrowClockwise,
   ArrowSquareOut,
+  ArrowUUpLeft,
   CaretLeft,
   CaretRight,
   ChatCircle,
@@ -86,8 +87,55 @@ const isTyping = (target: EventTarget | null) => {
   return Boolean(el?.closest?.("input, textarea, select, [contenteditable=''], [contenteditable='true']"))
 }
 
+/** How long a fresh selection keeps its shield, so a double-click on a frame still means Focus. */
+const DOUBLE_CLICK_MS = 350
+
 /** Keys the canvas takes back from a frame's page when you are not typing in it. */
-const FRAME_KEYS = new Set(["escape", "c", "v", "d", "p", "m", "x"])
+const FRAME_KEYS = new Set(["c", "v", "d", "p", "m", "x", "f"])
+/** With Cmd/Ctrl: zoom and undo stay the canvas's, never the browser's. */
+const MOD_KEYS = new Set(["=", "+", "-", "0", "z"])
+/** Arrows step between frames from a live, merely selected frame; in Focus they scroll the page. */
+const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])
+
+/** Inside a menu, listbox or grid the letters and arrows are the widget's (typeahead, moving). */
+const inWidget = (target: EventTarget | null) =>
+  Boolean(
+    (target as HTMLElement | null)?.closest?.(
+      "[role=menu], [role=menubar], [role=listbox], [role=combobox], [role=grid], [role=tree], [role=tablist], [role=radiogroup], [role=slider]",
+    ),
+  )
+
+/** What a frame shows when its page is on another origin and can't be read. */
+const FOREIGN_PAGE = "\u0000foreign"
+
+/**
+ * A page as the canvas compares it: path for the canvas's own origin, the full URL otherwise. The
+ * hash is left out, an in-page anchor is still the same page.
+ */
+const pageKey = (src: string) => {
+  try {
+    const url = new URL(src, window.location.href)
+    url.hash = ""
+    return url.origin === window.location.origin ? url.pathname + url.search : url.href
+  } catch {
+    return src
+  }
+}
+
+const isForeignSrc = (src: string) => {
+  try {
+    return new URL(src, window.location.href).origin !== window.location.origin
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Frames run sandboxed: scripts, forms, popups and modals work, but a page can't navigate the
+ * canvas tab itself (a target="_top" link or frame-busting script) now that one click reaches it.
+ */
+const FRAME_SANDBOX =
+  "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
 
 /** Give the keyboard back to the canvas when an iframe holds it. */
 const reclaimFocus = () => {
@@ -162,6 +210,7 @@ function VerdictGroup({ value, onChange }: { value: CanvasVerdict | null; onChan
 
 const FrameView = React.memo(function FrameView({
   frame,
+  src,
   interactive,
   dimmed,
   out,
@@ -169,8 +218,10 @@ const FrameView = React.memo(function FrameView({
   reloadKey,
   shield,
   onFrameLoad,
+  onHover,
 }: {
   frame: PlacedFrame
+  src: string
   interactive: boolean
   dimmed: boolean
   out: boolean
@@ -178,10 +229,15 @@ const FrameView = React.memo(function FrameView({
   reloadKey: number
   shield: React.ReactNode
   onFrameLoad: (id: string, element: HTMLIFrameElement) => void
+  onHover: (id: string, inside: boolean) => void
 }) {
   return (
     <div
       data-frame={frame.id}
+      // On the frame itself, not its shield: a live frame has no shield, and the hover must still
+      // end when the pointer leaves it, or the deselected frame kept a stale hover ring.
+      onPointerEnter={() => onHover(frame.id, true)}
+      onPointerLeave={() => onHover(frame.id, false)}
       style={{ left: frame.left, top: frame.top, width: frame.width, height: frame.height }}
       className={cn(
         "absolute overflow-clip rounded-[3px] bg-background ring-1 ring-(--canvas-stroke) transition-[opacity,box-shadow] duration-base ease-out",
@@ -195,8 +251,10 @@ const FrameView = React.memo(function FrameView({
       ) : (
         <iframe
           key={reloadKey}
-          src={frame.src}
+          src={src}
           title={frame.title}
+          sandbox={FRAME_SANDBOX}
+          allow="fullscreen; clipboard-read; clipboard-write"
           onLoad={(event) => onFrameLoad(frame.id, event.currentTarget)}
           className={cn("block size-full border-0 bg-background", !interactive && "pointer-events-none")}
         />
@@ -261,6 +319,10 @@ export function CanvasBoard({
   const [selected, setSelected] = React.useState<string | null>(null)
   const [focused, setFocused] = React.useState<string | null>(null)
   const [hovered, setHovered] = React.useState<string | null>(null)
+  const onHover = React.useCallback(
+    (id: string, inside: boolean) => setHovered((current) => (inside ? id : current === id ? null : current)),
+    [],
+  )
   const [activeComment, setActiveComment] = React.useState<string | null>(null)
   const [draft, setDraft] = React.useState<CommentDraft | null>(null)
   const [dragArea, setDragArea] = React.useState<(Area & { frameId: string }) | null>(null)
@@ -289,8 +351,29 @@ export function CanvasBoard({
   const escapeRef = React.useRef<() => void>(() => {})
   const keyRef = React.useRef<(event: KeyboardEvent, fromFrame: boolean) => void>(() => {})
   const interactiveRef = React.useRef<string | null>(null)
+  const focusedRef = React.useRef<string | null>(null)
+  const selectRef = React.useRef<(id: string, additive: boolean) => void>(() => {})
+  const zoomAtRef = React.useRef<(factor: number, sx: number, sy: number) => void>(() => {})
+  // Per frame: the page it shows now (pageKey), a page it was sent to (Back, Reload, a comment
+  // made on another page), and whether its page is on another origin.
+  const [pages, setPages] = React.useState<Record<string, string>>({})
+  const [routes, setRoutes] = React.useState<Record<string, string>>({})
+  const [foreign, setForeign] = React.useState<Record<string, boolean>>({})
+  // The frame just selected by a click keeps its shield for one double-click window, so the second
+  // click of a double-click still reaches the shield (Focus) instead of the now-live page.
+  const [arming, setArming] = React.useState<string | null>(null)
+  const armTimer = React.useRef(0)
+  const arm = React.useCallback((id: string) => {
+    window.clearTimeout(armTimer.current)
+    setArming(id)
+    armTimer.current = window.setTimeout(() => setArming(null), DOUBLE_CLICK_MS)
+  }, [])
+  React.useEffect(() => () => window.clearTimeout(armTimer.current), [])
 
-  const { camera, cameraRef, zoomBy, panBy, flyTo, zoomTargetValue, grid } = useCamera(viewportRef, { x: 0, y: 0, z: 0.25 })
+  const { camera, cameraRef, zoomAt, zoomBy, panBy, flyTo, zoomTargetValue, grid } = useCamera(viewportRef, { x: 0, y: 0, z: 0.25 })
+  React.useEffect(() => {
+    zoomAtRef.current = zoomAt
+  }, [zoomAt])
 
   const frames = React.useMemo(
     () =>
@@ -307,6 +390,55 @@ export function CanvasBoard({
     (id: string) => state.comments.findIndex((comment) => comment.id === id) + 1,
     [state.comments],
   )
+
+  /** The page a frame shows now, as pageKey; its variant until the page reports otherwise. */
+  const pageOf = React.useCallback(
+    (frame: PlacedFrame) => pages[frame.id] ?? pageKey(routes[frame.id] ?? frame.src),
+    [pages, routes],
+  )
+  /** The owner navigated inside the frame: it no longer shows the variant being judged. */
+  const driftedOf = React.useCallback(
+    (frame: PlacedFrame | undefined) => {
+      if (!frame || frame.kind === "image") return false
+      const page = pageOf(frame)
+      if (page === FOREIGN_PAGE) return !isForeignSrc(frame.src)
+      return page !== pageKey(frame.src)
+    },
+    [pageOf],
+  )
+  /** The page to record with a comment, drawing or verdict: only when it isn't the variant. */
+  const pageTag = React.useCallback(
+    (frame: PlacedFrame | undefined) => {
+      if (!frame || !driftedOf(frame)) return undefined
+      const page = pageOf(frame)
+      return page === FOREIGN_PAGE ? undefined : page
+    },
+    [driftedOf, pageOf],
+  )
+  /** A mark belongs on the frame only while the frame shows the page it was made on. */
+  const showsPage = React.useCallback(
+    (frameId: string, url: string | undefined) => {
+      const frame = frameById.get(frameId)
+      if (!frame) return false
+      return (url ?? pageKey(frame.src)) === pageOf(frame)
+    },
+    [frameById, pageOf],
+  )
+  /** Send a frame to a page (null = back to its variant); a remount, so it also reloads. */
+  const goTo = React.useCallback((id: string, page: string | null) => {
+    setRoutes((prev) => {
+      const next = { ...prev }
+      if (page) next[id] = page
+      else delete next[id]
+      return next
+    })
+    setPages((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+    setReloadKeys((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }))
+  }, [])
 
   const inset = React.useCallback(
     (focusMode = false): Inset => ({
@@ -487,43 +619,157 @@ export function CanvasBoard({
   const onFrameLoad = React.useCallback((id: string, element: HTMLIFrameElement) => {
     frameEls.current.set(id, element)
     frameCleanups.current.get(id)?.()
+    frameCleanups.current.delete(id)
     const win = element.contentWindow
     if (!win) return
+    // A page on another origin can't be listened to: no wheel, keys or focus hand-back, so it never
+    // goes live on selection (it falls back to the shield and Focus) and its URL is unknown.
+    let href: string
+    try {
+      href = win.location.href
+    } catch {
+      setForeign((prev) => (prev[id] ? prev : { ...prev, [id]: true }))
+      setPages((prev) => ({ ...prev, [id]: FOREIGN_PAGE }))
+      return
+    }
+    setForeign((prev) => (prev[id] ? { ...prev, [id]: false } : prev))
+    setPages((prev) => ({ ...prev, [id]: pageKey(href) }))
     try {
       let raf = 0
       const onScroll = () => {
         cancelAnimationFrame(raf)
         raf = requestAnimationFrame(() => setScrolls((prev) => ({ ...prev, [id]: { x: win.scrollX, y: win.scrollY } })))
       }
-      // Keystrokes inside a frame never reach the canvas window. Without this, a click into a
-      // focused frame (or a page that autofocuses an input) left C, V, D and Esc dead, so the
-      // tool never switched and every click kept landing on the page instead of the canvas.
+      // Client-side navigation (pushState) fires no load, so the URL is tracked from the history.
+      const onRoute = () => {
+        try {
+          const next = pageKey(win.location.href)
+          setPages((prev) => (prev[id] === next ? prev : { ...prev, [id]: next }))
+        } catch {}
+      }
+      const history = win.history
+      const push = history.pushState
+      const replace = history.replaceState
+      history.pushState = function (...args: Parameters<History["pushState"]>) {
+        push.apply(this, args)
+        onRoute()
+      }
+      history.replaceState = function (...args: Parameters<History["replaceState"]>) {
+        replace.apply(this, args)
+        onRoute()
+      }
+      // Keystrokes inside a frame never reach the canvas window, so the canvas's own keys are taken
+      // back unless the page is using them: typing, a menu or listbox (typeahead, arrows), or a key
+      // the page already handled. Esc is the page's first when it closed one of its layers (Radix
+      // prevents default then), so closing a menu inside the frame no longer drops the selection.
       const onKey = (event: KeyboardEvent) => {
+        if (event.defaultPrevented) return
         const key = event.key.toLowerCase()
-        if (key !== "escape" && (isTyping(event.target) || event.metaKey || event.ctrlKey || event.altKey)) return
-        if (!FRAME_KEYS.has(key)) return
+        if (key === "escape") {
+          event.preventDefault()
+          keyRef.current(event, true)
+          return
+        }
+        if (isTyping(event.target) || inWidget(event.target) || event.altKey) return
+        const mod = event.metaKey || event.ctrlKey
+        const take = mod
+          ? MOD_KEYS.has(key) && !event.shiftKey
+          : FRAME_KEYS.has(key) ||
+            (event.shiftKey && (event.code === "Digit1" || event.code === "Digit2")) ||
+            (focusedRef.current !== id && ARROW_KEYS.has(event.key))
+        if (!take) return
         event.preventDefault()
         keyRef.current(event, true)
       }
-      // Only the focused, interactive frame may hold the keyboard. A frame that grabs focus on its
-      // own (autofocus, a hot reload) hands it straight back.
+      // Only the live frame may hold the keyboard. A frame that grabs focus on its own (autofocus,
+      // a hot reload) hands it straight back.
       const onFocusIn = () => {
         if (interactiveRef.current === id) return
         if (document.activeElement === element) reclaimFocus()
       }
-      win.addEventListener("scroll", onScroll, { passive: true })
-      win.addEventListener("keydown", onKey)
-      win.addEventListener("focusin", onFocusIn)
+      const toCanvas = (clientX: number, clientY: number) => {
+        const rect = element.getBoundingClientRect()
+        const scale = rect.width / (win.innerWidth || rect.width)
+        return { x: rect.left + clientX * scale, y: rect.top + clientY * scale }
+      }
+      // A live frame that is only selected must not trap the wheel: the canvas keeps panning and
+      // zooming over it, same as over a dead frame. Only a focused frame scrolls its own page, and
+      // a pinch or Ctrl/Cmd-wheel always zooms the canvas (never the browser). Capture phase, so a
+      // carousel or map that stops the wheel on its own can't take the canvas's pan away.
+      const onWheel = (event: WheelEvent) => {
+        const zoom = event.ctrlKey || event.metaKey
+        if (!zoom && focusedRef.current === id) return
+        const viewport = viewportRef.current
+        if (!viewport) return
+        event.preventDefault()
+        event.stopPropagation()
+        const at = toCanvas(event.clientX, event.clientY)
+        viewport.dispatchEvent(
+          new WheelEvent("wheel", {
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            deltaMode: event.deltaMode,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+            clientX: at.x,
+            clientY: at.y,
+            bubbles: true,
+            cancelable: true,
+          }),
+        )
+      }
+      // Safari pinches with gesture events, not Ctrl-wheel: they zoom the canvas too.
+      let gestureBase = 1
+      const onGestureStart = (event: Event) => {
+        event.preventDefault()
+        gestureBase = 1
+      }
+      const onGestureChange = (event: Event) => {
+        event.preventDefault()
+        const gesture = event as Event & { scale: number; clientX: number; clientY: number }
+        const viewport = viewportRef.current?.getBoundingClientRect()
+        if (!viewport) return
+        const at = toCanvas(gesture.clientX, gesture.clientY)
+        zoomAtRef.current(gesture.scale / gestureBase, at.x - viewport.left, at.y - viewport.top)
+        gestureBase = gesture.scale
+      }
+      // A modifier always means the canvas, never the page (a Shift-click on a link would open a
+      // window): Shift adds the frame to the selection, any other modifier just keeps it selected.
+      // In Focus the page gets them, for Cmd-click to open a link in a new tab.
+      const onModifiedPress = (event: MouseEvent) => {
+        if (!(event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) return
+        if (focusedRef.current === id) return
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        if (event.type === "click") selectRef.current(id, event.shiftKey)
+      }
+      const listeners: [string, EventListener, AddEventListenerOptions | boolean][] = [
+        ["scroll", onScroll, { passive: true }],
+        ["popstate", onRoute, false],
+        ["hashchange", onRoute, false],
+        ["wheel", onWheel as EventListener, { capture: true, passive: false }],
+        ["gesturestart", onGestureStart, { capture: true, passive: false }],
+        ["gesturechange", onGestureChange, { capture: true, passive: false }],
+        ["pointerdown", onModifiedPress as EventListener, true],
+        ["mousedown", onModifiedPress as EventListener, true],
+        ["click", onModifiedPress as EventListener, true],
+        ["keydown", onKey as EventListener, false],
+        ["focusin", onFocusIn, false],
+      ]
+      for (const [type, listener, options] of listeners) win.addEventListener(type, listener, options)
       onFocusIn()
       setScrolls((prev) => ({ ...prev, [id]: { x: win.scrollX, y: win.scrollY } }))
       frameCleanups.current.set(id, () => {
         try {
-          win.removeEventListener("scroll", onScroll)
-          win.removeEventListener("keydown", onKey)
-          win.removeEventListener("focusin", onFocusIn)
+          for (const [type, listener, options] of listeners) win.removeEventListener(type, listener, options)
+          history.pushState = push
+          history.replaceState = replace
         } catch {}
       })
-    } catch {}
+    } catch (error) {
+      console.warn(`[canvas] could not listen to frame "${id}"`, error)
+    }
   }, [])
 
   const placeDraft = React.useCallback(
@@ -538,9 +784,9 @@ export function CanvasBoard({
       } catch {}
       setActiveComment(null)
       setSelected(frame.id)
-      setDraft({ frameId: frame.id, ...area, scrollX: scroll.x, scrollY: scroll.y, target })
+      setDraft({ frameId: frame.id, ...area, scrollX: scroll.x, scrollY: scroll.y, target, url: pageTag(frame) })
     },
-    [scrolls],
+    [pageTag, scrolls],
   )
 
   /** Screen → canvas coordinates, frozen at the camera of the moment the gesture starts. */
@@ -746,6 +992,7 @@ export function CanvasBoard({
       points: world.map((point) => local(point, anchor)),
       scrollX: scrollOf(anchor?.id).x,
       scrollY: scrollOf(anchor?.id).y,
+      url: pageTag(anchor),
     })
     setInkDraft(draftOf())
     listen(
@@ -845,6 +1092,7 @@ export function CanvasBoard({
   const setVerdict = React.useCallback(
     (ids: string[], verdict: CanvasVerdict | null) => {
       if (!ids.length) return
+      const url = ids.length === 1 ? pageTag(frameById.get(ids[0])) : undefined
       setState((prev) => ({
         ...prev,
         frames: prev.frames.map((frame) => {
@@ -852,12 +1100,14 @@ export function CanvasBoard({
           const next = { ...frame }
           if (verdict) next.verdict = verdict
           else delete next.verdict
+          if (verdict && url) next.verdictUrl = url
+          else delete next.verdictUrl
           return next
         }),
       }))
-      run(() => sendOp(apiBase, name, { op: "frame.verdict", ids, verdict }))
+      run(() => sendOp(apiBase, name, { op: "frame.verdict", ids, verdict, url }))
     },
-    [apiBase, name, run],
+    [apiBase, frameById, name, pageTag, run],
   )
 
   const toggleVerdict = React.useCallback(
@@ -890,6 +1140,12 @@ export function CanvasBoard({
   React.useEffect(() => {
     escapeRef.current = escape
   }, [escape])
+
+  React.useLayoutEffect(() => {
+    selectRef.current = (id, additive) => {
+      if (additive) selectFrame(id, true)
+    }
+  })
 
   React.useLayoutEffect(() => {
     keyRef.current = (event: KeyboardEvent, fromFrame: boolean) => {
@@ -1134,13 +1390,21 @@ export function CanvasBoard({
     el.addEventListener("pointercancel", up)
   }
 
-  const reload = (id: string) => setReloadKeys((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }))
+  const hereOf = (frame: PlacedFrame) => {
+    const page = pageOf(frame)
+    return page === FOREIGN_PAGE ? (routes[frame.id] ?? frame.src) : page
+  }
+  const reload = (id: string) => {
+    const frame = frameById.get(id)
+    if (frame) goTo(id, driftedOf(frame) ? hereOf(frame) : null)
+  }
   const openFrame = (id: string) => {
     const frame = frameById.get(id)
-    if (frame) window.open(frame.src, "_blank", "noopener")
+    if (frame) window.open(frame.kind === "image" ? frame.src : hereOf(frame), "_blank", "noopener")
   }
 
   const visibleComments = state.comments.filter((comment) => showResolved || !comment.resolved)
+  const pinnedComments = visibleComments.filter((comment) => showsPage(comment.frameId, comment.url))
   const openCount = state.comments.filter((comment) => !comment.resolved).length
   const asked = (state.requests ?? []).filter((request) => request.status === "open")
   const decisionOf = (row: string) => (state.decisions ?? []).filter((decision) => decision.row === row).at(-1)
@@ -1158,15 +1422,25 @@ export function CanvasBoard({
   }
   const contextFrame = (focused ?? selected) ? frameById.get((focused ?? selected)!) : undefined
   const contextIndex = contextFrame ? layout.frames.findIndex((frame) => frame.id === contextFrame.id) + 1 : 0
+  const contextDrifted = driftedOf(contextFrame)
+  const contextPage = contextFrame && contextDrifted ? (pageOf(contextFrame) === FOREIGN_PAGE ? "Another site" : pageOf(contextFrame)) : ""
   const cursor = panning ? "cursor-grabbing" : space ? "cursor-grab" : tool !== "move" ? "cursor-crosshair" : "cursor-default"
-  const interactiveId = focused && tool === "move" && !space && !resize ? focused : null
+  // The frame whose page takes the pointer: the focused one, or the one selected alone (a group
+  // selection stays on the canvas so Shift-click keeps adding frames).
+  const liveId = focused ?? (selected && !group.length ? selected : null)
+  const interactiveId = liveId && liveId !== arming && tool === "move" && !space && !resize ? liveId : null
+  React.useEffect(() => {
+    focusedRef.current = focused
+  }, [focused])
   React.useEffect(() => {
     interactiveRef.current = interactiveId
     if (!interactiveId) reclaimFocus()
   }, [interactiveId])
 
   const strokes: InkStroke[] = [
-    ...(erasing.length ? drawings.filter((drawing) => !erasing.includes(drawing.id)) : drawings),
+    ...drawings.filter(
+      (drawing) => !erasing.includes(drawing.id) && (!drawing.frameId || showsPage(drawing.frameId, drawing.url)),
+    ),
     ...(inkDraft ? [inkDraft] : []),
   ]
 
@@ -1194,24 +1468,31 @@ export function CanvasBoard({
           style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${z})` }}
         >
           {layout.frames.map((frame) => {
-            const interactive = focused === frame.id && tool === "move" && !space && !resize
+            // Live: the page under the pointer takes the clicks. A focused frame always; a selected one
+            // too (its toolbar is up, so the next click works inside: a link navigates in the frame).
+            // An image has nothing to work, so a merely selected one keeps its shield for double-click.
+            // A page on another origin can't hand the wheel or keys back, so it stays behind its shield.
+            const interactive =
+              interactiveId === frame.id &&
+              (focused === frame.id || (frame.kind !== "image" && !foreign[frame.id]))
             return (
               <FrameView
                 key={frame.id}
                 frame={frame}
+                src={routes[frame.id] ?? frame.src}
                 interactive={interactive}
                 dimmed={Boolean(focused && focused !== frame.id)}
                 out={frame.verdict === "out"}
                 lifted={selected === frame.id || group.includes(frame.id)}
                 reloadKey={reloadKeys[frame.id] ?? 0}
                 onFrameLoad={onFrameLoad}
+                onHover={onHover}
                 shield={
                   <div
                     className={cn("absolute inset-0", space ? "cursor-grab" : "cursor-pointer")}
-                    onPointerEnter={() => setHovered(frame.id)}
-                    onPointerLeave={() => setHovered((current) => (current === frame.id ? null : current))}
                     onClick={(event) => {
                       if (space || tool !== "move") return
+                      if (!event.shiftKey) arm(frame.id)
                       selectFrame(frame.id, event.shiftKey)
                     }}
                     onDoubleClick={() => tool === "move" && focusFrame(frame.id)}
@@ -1291,6 +1572,9 @@ export function CanvasBoard({
                   <span className={cn("truncate", frame.verdict === "out" && "text-muted-foreground/70 line-through decoration-muted-foreground/50")}>
                     {frame.title}
                   </span>
+                  {driftedOf(frame) && (
+                    <span aria-label="Showing another page than the variant" className="size-1.5 shrink-0 rounded-full bg-warning" />
+                  )}
                   {frame.frozen && width > 160 && <span className="shrink-0 text-xs text-muted-foreground/70">Frozen</span>}
                   {openHere > 0 && width > 120 && (
                     <span className="flex h-4 shrink-0 items-center gap-0.5 rounded-full bg-brand px-1.5 text-[0.625rem] font-semibold text-brand-foreground tabular-nums">
@@ -1383,7 +1667,7 @@ export function CanvasBoard({
             )
           })}
 
-          {visibleComments.map((comment) =>
+          {pinnedComments.map((comment) =>
             renderArea(
               `area-${comment.id}`,
               comment,
@@ -1393,7 +1677,7 @@ export function CanvasBoard({
           {draft && renderArea("area-draft", draft, "active")}
           {dragArea && renderArea("area-drag", dragArea, "active")}
 
-          {visibleComments.map((comment) => {
+          {pinnedComments.map((comment) => {
             const at = pinPosition(comment)
             if (!at) return null
             return (
@@ -1502,15 +1786,30 @@ export function CanvasBoard({
             </ToolbarButton>
           )}
           <ToolbarTitle className="max-w-72">{contextFrame.title}</ToolbarTitle>
-          <span className="pr-1.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
-            {focused ? `${contextIndex} / ${layout.frames.length}` : `${contextFrame.width} × ${contextFrame.height}`}
-          </span>
+          {contextDrifted ? (
+            <span
+              title={contextPage}
+              className="flex max-w-48 min-w-0 items-center gap-1.5 pr-1.5 text-xs whitespace-nowrap text-muted-foreground"
+            >
+              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warning" />
+              <span className="truncate">{contextPage}</span>
+            </span>
+          ) : (
+            <span className="pr-1.5 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+              {focused ? `${contextIndex} / ${layout.frames.length}` : `${contextFrame.width} × ${contextFrame.height}`}
+            </span>
+          )}
           {focused && (
             <ToolbarButton tooltip="Next" shortcut="→" onClick={() => step(1)}>
               <CaretRight weight="bold" />
             </ToolbarButton>
           )}
           <ToolbarSeparator />
+          {contextDrifted && (
+            <ToolbarButton tooltip="Back to the variant" onClick={() => goTo(contextFrame.id, null)}>
+              <ArrowUUpLeft weight="bold" />
+            </ToolbarButton>
+          )}
           {contextFrame.kind !== "image" && (
             <ToolbarButton tooltip="Reload" onClick={() => reload(contextFrame.id)}>
               <ArrowClockwise weight="bold" />
@@ -1631,6 +1930,7 @@ export function CanvasBoard({
           onResolve={(comment, resolved) => run(() => sendOp(apiBase, name, { op: "comment.resolve", id: comment.id, resolved }))}
           onPick={(comment) => {
             const frame = frameById.get(comment.frameId)
+            if (frame && !showsPage(comment.frameId, comment.url)) goTo(frame.id, comment.url ?? null)
             const rect = viewportRef.current?.getBoundingClientRect()
             setSelected(comment.frameId)
             setDraft(null)

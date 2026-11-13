@@ -4,6 +4,7 @@ import {
   REQUEST_KINDS,
   VERDICTS,
   inkBounds,
+  pageUrl,
   type CanvasInkColor,
   type CanvasInkTool,
   nextContext,
@@ -34,12 +35,13 @@ export type CanvasOp =
       scrollY?: number
       text: string
       target?: CanvasCommentTarget
+      url?: string
     }
   | { op: "comment.reply"; id: string; text: string }
   | { op: "comment.resolve"; id: string; resolved: boolean }
   | { op: "comment.delete"; id: string }
   | { op: "frame.resize"; id: string; width: number; height: number }
-  | { op: "frame.verdict"; ids: string[]; verdict: CanvasVerdict | null }
+  | { op: "frame.verdict"; ids: string[]; verdict: CanvasVerdict | null; url?: string }
   | { op: "request.add"; kind: CanvasRequestKind; frameIds: string[]; text?: string }
   | { op: "request.cancel"; id: string }
   | {
@@ -52,6 +54,7 @@ export type CanvasOp =
       scrollX?: number
       scrollY?: number
       target?: CanvasCommentTarget
+      url?: string
     }
   | { op: "drawing.delete"; ids: string[] }
   | { op: "drawing.clear"; frameId?: string | null }
@@ -93,6 +96,7 @@ export function mutateCanvas(draft: CanvasState, body: CanvasOp, stamp: string):
         text,
         author: "owner",
         target: body.target,
+        ...(pageUrl(body.url) ? { url: pageUrl(body.url) } : {}),
         resolved: false,
         replies: [],
         createdAt: stamp,
@@ -131,6 +135,9 @@ export function mutateCanvas(draft: CanvasState, body: CanvasOp, stamp: string):
         const frame = frameOf(id)
         if (body.verdict) frame.verdict = body.verdict
         else delete frame.verdict
+        const url = body.verdict && body.ids.length === 1 ? pageUrl(body.url) : undefined
+        if (url) frame.verdictUrl = url
+        else delete frame.verdictUrl
         frame.updatedAt = stamp
       }
       return created
@@ -186,6 +193,7 @@ export function mutateCanvas(draft: CanvasState, body: CanvasOp, stamp: string):
         scrollY: Math.round(body.scrollY ?? 0),
         bounds: inkBounds(kept, size),
         target: body.target,
+        ...(pageUrl(body.url) ? { url: pageUrl(body.url) } : {}),
         author: "owner",
         createdAt: stamp,
       })

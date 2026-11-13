@@ -21,6 +21,7 @@ export interface CommentDraft {
   scrollX: number
   scrollY: number
   target?: CanvasCommentTarget
+  url?: string
 }
 
 const clock = (iso: string) => {
@@ -169,6 +170,11 @@ export function CommentThread({
         {comment.width && comment.height ? (
           <p className="text-xs text-muted-foreground tabular-nums">
             Area {comment.width} × {comment.height}
+          </p>
+        ) : null}
+        {comment.url ? (
+          <p className="truncate text-xs text-muted-foreground" title={comment.url}>
+            On {comment.url}, not the variant
           </p>
         ) : null}
         {comment.target?.text ? (
@@ -431,7 +437,11 @@ function CommentRow({
 }) {
   const replies = comment.replies.length
   const isArea = Boolean(comment.width && comment.height)
-  const meta = [replies ? `${replies} ${replies === 1 ? "reply" : "replies"}` : null, isArea ? "Area" : null].filter(Boolean)
+  const meta = [
+    replies ? `${replies} ${replies === 1 ? "reply" : "replies"}` : null,
+    isArea ? "Area" : null,
+    comment.url ? `On ${comment.url}` : null,
+  ].filter(Boolean)
 
   return (
     <li className="group relative flex gap-3 rounded-md px-2.5 py-2 transition-colors duration-fast ease-out hover:bg-accent has-[button:focus-visible]:bg-accent">
@@ -454,7 +464,7 @@ function CommentRow({
         <span className={cn("line-clamp-3 text-sm text-pretty", comment.resolved ? "text-muted-foreground" : "text-body")}>
           {comment.text}
         </span>
-        {meta.length ? <span className="text-xs text-muted-foreground tabular-nums">{meta.join(" · ")}</span> : null}
+        {meta.length ? <span className="truncate text-xs text-muted-foreground tabular-nums">{meta.join(" · ")}</span> : null}
       </span>
       <span className="relative h-5 w-10 shrink-0">
         <span className="pointer-events-none absolute inset-0 flex items-center justify-end text-xs text-muted-foreground tabular-nums transition-[opacity,translate] duration-fast ease-out group-focus-within:-translate-y-1 group-focus-within:opacity-0 group-hover:-translate-y-1 group-hover:opacity-0">

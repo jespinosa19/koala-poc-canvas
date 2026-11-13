@@ -24,6 +24,8 @@ export interface CanvasFrame {
   row: string
   note?: string
   verdict?: CanvasVerdict
+  /** Set when the verdict was given while the frame showed another page than its variant. */
+  verdictUrl?: string
   from?: string
   frozen?: CanvasFrozen
   createdAt: string
@@ -79,6 +81,11 @@ export interface CanvasComment {
   text: string
   author: "owner" | "agent"
   target?: CanvasCommentTarget
+  /**
+   * The page the comment was made on, when the owner had navigated the frame away from its variant
+   * (path for the frame's own origin, full URL otherwise). Absent = the variant itself.
+   */
+  url?: string
   resolved: boolean
   resolution?: string
   replies: CanvasReply[]
@@ -111,8 +118,15 @@ export interface CanvasDrawing {
   scrollY: number
   bounds: { x: number; y: number; width: number; height: number }
   target?: CanvasCommentTarget
+  /** Like a comment's: the page it was drawn on when that was not the variant. */
+  url?: string
   author: "owner" | "agent"
   createdAt: string
+}
+
+/** A page a comment, drawing or verdict was given on: kept short and plain, or dropped. */
+export function pageUrl(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 && value.length <= 2000 ? value : undefined
 }
 
 export function inkBounds(points: [number, number][], size = 0) {
