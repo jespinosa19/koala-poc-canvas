@@ -1,6 +1,6 @@
 {
   "name": "koala-poc-canvas",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A local canvas where agents lay out live variants of your screens side by side, and you decide: Pick, Maybe, Out, comments, drawings and a recorded decision.",
   "keywords": [
     "design",
