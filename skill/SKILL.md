@@ -34,13 +34,15 @@ A round is too much for one context to do well: reading the history, building th
 
 The flow of a round:
 
-1. **Research** → one researcher with the screen, the round's question and the owner's words. Read its brief; if the directions are not really different, send it back once.
-2. **Build** → one builder per direction, all launched in the same message so they run in parallel. Give each the full brief plus its own direction and file.
-3. **Review** → one reviewer with the brief and every builder report.
+1. **Research** → one researcher with the screen, the round's question and the owner's words. It writes the brief to `.koala-canvas/briefs/<canvas>-r<round>.md` and returns that path plus the direction list. Read the file; if the directions are not really different, send it back once.
+2. **Build** → one builder per direction, all launched in the same message so they run in parallel. Give each only the brief's path, its letter, its file and the project root and canvas origin. Never paste the brief into the prompt: the builder reads the file.
+3. **Review** → one reviewer with the brief's path and every builder report.
 4. **Fix loop** → each FIX goes back to *that* builder (SendMessage to the same agent, so it keeps its context) with the reviewer's exact words; then re-review only what changed. At most two loops: if a variant still fails, drop it and tell the owner why.
 5. **Canvas** → only PASSED variants get `koala-poc-canvas add` (by you, the lead). Put the reviewer's one-line verdict in `--note`.
 
-Small jobs skip the team: a single `more` variation, a one-line fix after a comment, or a round of two variants can be done directly, still checked with `koala-poc-canvas check` before `add`. Answering a `more` or `mix` request with 2–3 variations is a mini-round: builders in parallel, then the reviewer.
+Small jobs skip the team: a single `more` variation, a one-line fix after a comment, a round of two variants, or a visual round of up to three variants on a layout already picked can be done directly, still checked with `koala-poc-canvas check` before `add`. Answering a `more` or `mix` request with 2–3 variations is done directly too when the hint is about visuals; use builders and the reviewer when it changes structure. Every agent pays its own start-up context, so spawn them only when the work is really parallel.
+
+Always launch the agents with a fresh context, never as a fork: a fork inherits the lead's whole conversation.
 
 ## 3. Building and placing frames
 

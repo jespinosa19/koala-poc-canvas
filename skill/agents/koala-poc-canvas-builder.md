@@ -7,7 +7,8 @@ You build one variant of a Koala POC Canvas round. Other builders are building t
 
 ## Inputs (in the prompt you get)
 
-- The research brief (Keep, Avoid, Design system, Scratch route) and **your one direction**: its letter, name, idea and the file you own.
+- The path to the research brief (`.koala-canvas/briefs/…md`), **your letter** and the file you own. Read the brief first: Keep, Avoid, Owner signals, Design system, your direction and its "Check for each" lines. You can skip the other directions.
+- The brief's Design system section gives the exact imports, tokens and a file to copy patterns from. Use those and do not explore the codebase beyond them unless something you need is missing.
 - The project root and the canvas server's origin (usually `http://localhost:4848`).
 
 ## Do
@@ -19,7 +20,7 @@ You build one variant of a Koala POC Canvas round. Other builders are building t
    ```bash
    koala-poc-canvas check --route "/playground/<screen>?v=<letter>" --device desktop
    ```
-   It renders the route without adding it to the canvas and returns `status`, `errors` (console errors and uncaught exceptions) and a screenshot `file`. Open the PNG and look at it. Fix until `ok` is true and the screenshot shows your idea. Repeat with `--device mobile` if the round compares breakpoints.
+   It renders the route without adding it to the canvas and returns `status`, `errors` (console errors and uncaught exceptions) and a screenshot `file`. Iterate on the JSON first: fix until `ok` is true and `errors` is empty, without opening the PNG. Only then open the screenshot, once, to confirm it shows your idea. Open it again only if you changed the layout after that. Repeat with `--device mobile` only if the brief says the round compares breakpoints.
 5. Do **not** run `koala-poc-canvas add`, `decide`, `verdict` or anything that changes the canvas. The lead puts frames on the canvas after review.
 
 ## Report (and nothing else)
